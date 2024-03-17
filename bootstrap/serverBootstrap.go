@@ -1,7 +1,8 @@
-package lazynet
+package bootstrap
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	log "github.com/ningzining/L-log"
 	"github.com/ningzining/lazynet/decoder"
@@ -78,8 +79,10 @@ func (s *ServerBootstrap) handleConn(conn net.Conn) {
 		}
 	}()
 
-	// TCP缓冲区
+	// 新建缓冲区
 	var buffer = bytes.NewBuffer(make([]byte, 0, 4096))
+	// 新建上下文
+	ctx := handler.NewChannelHandlerContext(context.Background())
 
 	for {
 		// 读取数据
@@ -103,10 +106,9 @@ func (s *ServerBootstrap) handleConn(conn net.Conn) {
 			if err != nil {
 				break
 			}
-			// todo: 对每一个数据包做处理
-			log.Info(string(msg))
+			// 对每一个数据包做处理
 			for _, channelHandler := range s.handlerList {
-				channelHandler.ChannelRead(msg)
+				channelHandler.ChannelRead(ctx, msg)
 			}
 		}
 	}

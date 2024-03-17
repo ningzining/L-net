@@ -1,5 +1,7 @@
 package handler
 
+import "context"
+
 type ChannelHandler interface {
-	ChannelRead(msg []byte)
+	ChannelRead(ctx context.Context, msg []byte)
 }
