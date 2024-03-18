@@ -23,22 +23,26 @@ func NewServerBootstrap(addr string) *ServerBootstrap {
 	}
 }
 
+// RegisterDecoder 注册解码器
 func (s *ServerBootstrap) RegisterDecoder(d decoder.Decoder) *ServerBootstrap {
 	s.decoder = d
 	return s
 }
 
+// AddHandler 添加处理器
 func (s *ServerBootstrap) AddHandler(handler handler.ChannelHandler) *ServerBootstrap {
 	s.handlerList = append(s.handlerList, handler)
 	return s
 }
 
+// Start 启动服务端
 func (s *ServerBootstrap) Start() error {
 	// 校验相关参数是否正常
 	if err := s.verifyParam(); err != nil {
 		return err
 	}
 
+	// 监听端口
 	listener, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		return err
@@ -56,6 +60,7 @@ func (s *ServerBootstrap) Start() error {
 	}
 }
 
+// 验证参数是否完整
 func (s *ServerBootstrap) verifyParam() error {
 	if s.addr == "" {
 		return errors.New("addr must be required")
@@ -70,6 +75,7 @@ func (s *ServerBootstrap) verifyParam() error {
 	return nil
 }
 
+// 处理连接
 func (s *ServerBootstrap) handleConn(conn net.Conn) {
 	defer func() {
 		conn.Close()
@@ -81,7 +87,7 @@ func (s *ServerBootstrap) handleConn(conn net.Conn) {
 
 	// 新建缓冲区
 	var buffer = bytes.NewBuffer(make([]byte, 0, 4096))
-	// 新建上下文
+	// 初始化上下文
 	ctx := handler.NewChannelHandlerContext(context.Background())
 
 	for {
@@ -99,9 +105,9 @@ func (s *ServerBootstrap) handleConn(conn net.Conn) {
 			continue
 		}
 
-		// 处理数据包
+		// 处理缓冲区数据
 		for {
-			// 解码数据包
+			// 使用预加载的解码器解析数据包供下方处理器使用
 			msg, err := s.decoder.Decode(buffer)
 			if err != nil {
 				break

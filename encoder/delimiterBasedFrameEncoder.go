@@ -1,5 +1,6 @@
 package encoder
 
+// DelimiterBasedFrameEncoder 分隔符分帧编码器
 type DelimiterBasedFrameEncoder struct {
 	delimiter byte
 }

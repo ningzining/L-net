@@ -4,6 +4,7 @@ const (
 	lineBreaks = '\n'
 )
 
+// LineBasedFrameEncoder 行分帧编码器
 type LineBasedFrameEncoder struct {
 }
 

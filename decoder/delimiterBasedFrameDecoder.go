@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// DelimiterBasedFrameDecoder 分隔符分帧解码器
 type DelimiterBasedFrameDecoder struct {
 	delimiter byte
 }

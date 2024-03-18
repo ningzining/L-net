@@ -19,11 +19,13 @@ func NewClientBootstrap(addr string) *ClientBootstrap {
 	}
 }
 
+// RegisterEncoder 注册编码器
 func (c *ClientBootstrap) RegisterEncoder(encoder encoder.Encoder) *ClientBootstrap {
 	c.encoder = encoder
 	return c
 }
 
+// Start 启动客户端
 func (c *ClientBootstrap) Start() error {
 	conn, err := net.Dial("tcp", c.addr)
 	if err != nil {
@@ -33,6 +35,7 @@ func (c *ClientBootstrap) Start() error {
 	return nil
 }
 
+// 往连接中写入字节数组
 func (c *ClientBootstrap) Write(source []byte) error {
 	frame := source
 

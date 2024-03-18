@@ -10,6 +10,7 @@ const (
 	lineBreaks = '\n'
 )
 
+// LineBasedFrameDecoder 行分帧解码器
 type LineBasedFrameDecoder struct {
 }
 
