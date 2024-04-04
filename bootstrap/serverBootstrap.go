@@ -1,48 +1,50 @@
 package bootstrap
 
 import (
-	"bytes"
-	"context"
 	"errors"
-	log "github.com/ningzining/L-log"
-	"github.com/ningzining/lazynet/decoder"
-	"github.com/ningzining/lazynet/handler"
 	"net"
+
+	"github.com/ningzining/lazynet/conf"
+	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/iface"
 )
 
 type ServerBootstrap struct {
-	addr        string
-	decoder     decoder.Decoder
-	handlerList []handler.ChannelHandler
+	ip      string
+	port    int
+	decoder decoder.Decoder
 }
 
-func NewServerBootstrap(addr string) *ServerBootstrap {
-	return &ServerBootstrap{
-		addr:        addr,
-		handlerList: make([]handler.ChannelHandler, 0),
+// 创建默认服务
+func NewServerBootstrap(opts ...Option) iface.Server {
+	return newServerWithConfig(conf.DefaultConfig(), opts...)
+}
+
+// 自定义配置创建服务
+func NewServerBootstrapWithConfig(config *conf.Config, opts ...Option) iface.Server {
+	return newServerWithConfig(config, opts...)
+}
+
+func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
+	s := &ServerBootstrap{
+		ip:      config.Host,
+		port:    config.Port,
+		decoder: nil,
 	}
-}
 
-// RegisterDecoder 注册解码器
-func (s *ServerBootstrap) RegisterDecoder(d decoder.Decoder) *ServerBootstrap {
-	s.decoder = d
+	for _, opt := range opts {
+		opt(s)
+	}
+
 	return s
 }
 
-// AddHandler 添加处理器
-func (s *ServerBootstrap) AddHandler(handler handler.ChannelHandler) *ServerBootstrap {
-	s.handlerList = append(s.handlerList, handler)
-	return s
-}
-
-// Start 启动服务端
 func (s *ServerBootstrap) Start() error {
 	// 校验相关参数是否正常
 	if err := s.verifyParam(); err != nil {
 		return err
 	}
 
-	// 监听端口
 	listener, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		return err
@@ -50,17 +52,23 @@ func (s *ServerBootstrap) Start() error {
 
 	defer listener.Close()
 
+	var cid uint32
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Error(err.Error())
 			continue
 		}
-		go s.handleConn(conn)
+
+		// 创建连接
+		connection := NewConnection(conn, cid)
+		cid++
+
+		// 启动连接
+		go connection.Start()
 	}
 }
 
-// 验证参数是否完整
 func (s *ServerBootstrap) verifyParam() error {
 	if s.addr == "" {
 		return errors.New("addr must be required")
@@ -68,54 +76,10 @@ func (s *ServerBootstrap) verifyParam() error {
 	if s.decoder == nil {
 		return errors.New("decoder must be required")
 	}
-	if len(s.handlerList) == 0 {
-		return errors.New("handler must be required")
-	}
 
 	return nil
 }
 
-// 处理连接
-func (s *ServerBootstrap) handleConn(conn net.Conn) {
-	defer func() {
-		conn.Close()
+func (s *ServerBootstrap) Stop() {
 
-		if err := recover(); err != nil {
-			log.Errorf("%v", err)
-		}
-	}()
-
-	// 新建缓冲区
-	var buffer = bytes.NewBuffer(make([]byte, 0, 4096))
-	// 初始化上下文
-	ctx := handler.NewChannelHandlerContext(context.Background())
-
-	for {
-		// 读取数据
-		readBytes := make([]byte, 1024)
-		n, err := conn.Read(readBytes)
-		if err != nil {
-			break
-		}
-
-		// 写入buffer缓冲区
-		_, err = buffer.Write(readBytes[:n])
-		if err != nil {
-			log.Errorf("%v", err)
-			continue
-		}
-
-		// 处理缓冲区数据
-		for {
-			// 使用预加载的解码器解析数据包供下方处理器使用
-			msg, err := s.decoder.Decode(buffer)
-			if err != nil {
-				break
-			}
-			// 对每一个数据包做处理
-			for _, channelHandler := range s.handlerList {
-				channelHandler.ChannelRead(ctx, msg)
-			}
-		}
-	}
 }
