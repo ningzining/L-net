@@ -7,7 +7,7 @@ import (
 )
 
 func TestStartClientBootstrap(t *testing.T) {
-	clientBootstrap := NewClientBootstrap("127.0.0.1:9999").
+	clientBootstrap := NewClientBootstrap("127.0.0.1:8999").
 		RegisterEncoder(encoder.NewDelimiterBasedFrameDecoder('\n'))
 
 	if err := clientBootstrap.Start(); err != nil {

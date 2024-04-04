@@ -1,7 +1,7 @@
 package bootstrap
 
 import (
-	"errors"
+	"fmt"
 	"net"
 
 	"github.com/ningzining/lazynet/conf"
@@ -25,6 +25,7 @@ func NewServerBootstrapWithConfig(config *conf.Config, opts ...Option) iface.Ser
 	return newServerWithConfig(config, opts...)
 }
 
+// 使用配置创建服务
 func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	s := &ServerBootstrap{
 		ip:      config.Host,
@@ -40,12 +41,7 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 }
 
 func (s *ServerBootstrap) Start() error {
-	// 校验相关参数是否正常
-	if err := s.verifyParam(); err != nil {
-		return err
-	}
-
-	listener, err := net.Listen("tcp", s.addr)
+	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.ip, s.port))
 	if err != nil {
 		return err
 	}
@@ -67,17 +63,6 @@ func (s *ServerBootstrap) Start() error {
 		// 启动连接
 		go connection.Start()
 	}
-}
-
-func (s *ServerBootstrap) verifyParam() error {
-	if s.addr == "" {
-		return errors.New("addr must be required")
-	}
-	if s.decoder == nil {
-		return errors.New("decoder must be required")
-	}
-
-	return nil
 }
 
 func (s *ServerBootstrap) Stop() {

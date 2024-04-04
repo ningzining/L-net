@@ -10,8 +10,8 @@ import (
 )
 
 type Connection struct {
-	connID     uint32
 	conn       net.Conn
+	connID     uint32
 	remoteAddr net.Addr
 	localAddr  net.Addr
 	handler    handler.ConnectionHandler
@@ -19,10 +19,11 @@ type Connection struct {
 
 func NewConnection(conn net.Conn, connID uint32) iface.Connection {
 	return &Connection{
-		connID:     connID,
 		conn:       conn,
+		connID:     connID,
 		remoteAddr: conn.RemoteAddr(),
 		localAddr:  conn.LocalAddr(),
+		handler:    handler.NewDefaultConnectionHandler(),
 	}
 }
 
@@ -40,14 +41,6 @@ func (c *Connection) RemoteAddr() net.Addr {
 
 func (c *Connection) LocalAddr() net.Addr {
 	return c.localAddr
-}
-
-func (c *Connection) Read(b []byte) (n int, err error) {
-	return c.Conn().Read(b)
-}
-
-func (c *Connection) Write(b []byte) (n int, err error) {
-	return c.Conn().Write(b)
 }
 
 func (c *Connection) Start() {
