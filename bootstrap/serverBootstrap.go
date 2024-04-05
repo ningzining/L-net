@@ -57,7 +57,7 @@ func (s *ServerBootstrap) Start() error {
 		}
 
 		// 创建连接
-		connection := NewConnection(conn, cid)
+		connection := NewConnection(s, conn, cid)
 		cid++
 
 		// 启动连接
@@ -67,4 +67,16 @@ func (s *ServerBootstrap) Start() error {
 
 func (s *ServerBootstrap) Stop() {
 
+}
+
+func (s *ServerBootstrap) SetDecoder(decoder decoder.Decoder) {
+	s.decoder = decoder
+}
+
+func (s *ServerBootstrap) GetDecoder() decoder.Decoder {
+	if s.decoder == nil {
+		s.decoder = decoder.NewLineBasedFrameDecoder()
+	}
+
+	return s.decoder
 }

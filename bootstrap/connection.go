@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"github.com/ningzining/lazynet/decoder"
 	"net"
 
 	log "github.com/ningzining/L-log"
@@ -10,15 +11,19 @@ import (
 )
 
 type Connection struct {
+	server     iface.Server
 	conn       net.Conn
 	connID     uint32
+	decoder    decoder.Decoder
 	remoteAddr net.Addr
 	localAddr  net.Addr
 	handler    handler.ConnectionHandler
 }
 
-func NewConnection(conn net.Conn, connID uint32) iface.Connection {
+func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Connection {
 	return &Connection{
+		server:     server,
+		decoder:    server.GetDecoder(),
 		conn:       conn,
 		connID:     connID,
 		remoteAddr: conn.RemoteAddr(),
@@ -69,6 +74,7 @@ func (c *Connection) StartReader() {
 	}
 
 }
+
 func (c *Connection) Stop() {
 	c.conn.Close()
 }
