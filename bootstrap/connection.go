@@ -60,12 +60,12 @@ func (c *Connection) StartReader() {
 	for {
 		// 读取数据
 		readBytes := make([]byte, 1024)
-		_, err := c.conn.Read(readBytes)
+		n, err := c.conn.Read(readBytes)
 		if err != nil {
 			continue
 		}
 		// 处理数据
-		c.handler.ConnectionRead(context.Background(), readBytes)
+		c.handler.ConnectionRead(context.Background(), readBytes[:n])
 	}
 
 }
