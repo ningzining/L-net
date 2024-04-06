@@ -10,9 +10,11 @@ import (
 )
 
 type ServerBootstrap struct {
-	ip      string
-	port    int
-	decoder decoder.Decoder
+	ip               string
+	port             int
+	decoder          decoder.Decoder
+	connOnActiveFunc func(conn iface.Connection)
+	connOnCloseFunc  func(conn iface.Connection)
 }
 
 // 创建默认服务
@@ -79,4 +81,20 @@ func (s *ServerBootstrap) GetDecoder() decoder.Decoder {
 	}
 
 	return s.decoder
+}
+
+func (s *ServerBootstrap) SetConnOnActiveFunc(f func(conn iface.Connection)) {
+	s.connOnActiveFunc = f
+}
+
+func (s *ServerBootstrap) GetConnOnActiveFunc() func(conn iface.Connection) {
+	return s.connOnActiveFunc
+}
+
+func (s *ServerBootstrap) SetConnOnCloseFunc(f func(conn iface.Connection)) {
+	s.connOnCloseFunc = f
+}
+
+func (s *ServerBootstrap) GetConnOnCloseFunc() func(conn iface.Connection) {
+	return s.connOnCloseFunc
 }

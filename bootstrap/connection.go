@@ -18,17 +18,22 @@ type Connection struct {
 	remoteAddr net.Addr
 	localAddr  net.Addr
 	handler    handler.ConnectionHandler
+
+	onActive func(conn iface.Connection) // 钩子函数，当连接建立的时候调用
+	onClose  func(conn iface.Connection) // 钩子函数，当连接断开的时候调用
 }
 
 func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Connection {
 	return &Connection{
 		server:     server,
-		decoder:    server.GetDecoder(),
 		conn:       conn,
 		connID:     connID,
+		decoder:    server.GetDecoder(),
 		remoteAddr: conn.RemoteAddr(),
 		localAddr:  conn.LocalAddr(),
 		handler:    handler.NewDefaultConnectionHandler(),
+		onActive:   server.GetConnOnActiveFunc(),
+		onClose:    server.GetConnOnCloseFunc(),
 	}
 }
 
@@ -49,6 +54,10 @@ func (c *Connection) LocalAddr() net.Addr {
 }
 
 func (c *Connection) Start() {
+	if c.onActive != nil {
+		c.onActive(c)
+	}
+
 	// 启动阅读器
 	go c.StartReader()
 	// todo: 启动写入器
@@ -67,12 +76,15 @@ func (c *Connection) StartReader() {
 		readBytes := make([]byte, 1024)
 		n, err := c.conn.Read(readBytes)
 		if err != nil {
-			continue
+			break
 		}
 		// 处理数据
 		c.handler.ConnectionRead(context.Background(), readBytes[:n])
 	}
 
+	if c.onClose != nil {
+		c.onClose(c)
+	}
 }
 
 func (c *Connection) Stop() {
