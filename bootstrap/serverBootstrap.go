@@ -2,17 +2,19 @@ package bootstrap
 
 import (
 	"fmt"
-	"net"
-
 	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/handler"
 	"github.com/ningzining/lazynet/iface"
+	"net"
 )
 
 type ServerBootstrap struct {
-	ip               string
-	port             int
-	decoder          decoder.Decoder
+	ip   string
+	port int
+
+	decoder          decoder.Decoder           // 解码器
+	msgHandler       handler.ConnectionHandler // 消息处理器
 	connOnActiveFunc func(conn iface.Connection)
 	connOnCloseFunc  func(conn iface.Connection)
 }
@@ -30,9 +32,12 @@ func NewServerBootstrapWithConfig(config *conf.Config, opts ...Option) iface.Ser
 // 使用配置创建服务
 func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	s := &ServerBootstrap{
-		ip:      config.Host,
-		port:    config.Port,
-		decoder: nil,
+		ip:               config.Host,
+		port:             config.Port,
+		decoder:          decoder.NewLineBasedFrameDecoder(),
+		msgHandler:       handler.NewDefaultConnectionHandler(),
+		connOnActiveFunc: nil,
+		connOnCloseFunc:  nil,
 	}
 
 	for _, opt := range opts {
@@ -76,11 +81,15 @@ func (s *ServerBootstrap) SetDecoder(decoder decoder.Decoder) {
 }
 
 func (s *ServerBootstrap) GetDecoder() decoder.Decoder {
-	if s.decoder == nil {
-		s.decoder = decoder.NewLineBasedFrameDecoder()
-	}
-
 	return s.decoder
+}
+
+func (s *ServerBootstrap) SetMsgHandler(handler handler.ConnectionHandler) {
+	s.msgHandler = handler
+}
+
+func (s *ServerBootstrap) GetMsgHandler() handler.ConnectionHandler {
+	return s.msgHandler
 }
 
 func (s *ServerBootstrap) SetConnOnActiveFunc(f func(conn iface.Connection)) {

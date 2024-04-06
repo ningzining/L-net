@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"bytes"
 	"context"
 	"github.com/ningzining/lazynet/decoder"
 	"net"
@@ -11,13 +12,16 @@ import (
 )
 
 type Connection struct {
-	server     iface.Server
 	conn       net.Conn
 	connID     uint32
-	decoder    decoder.Decoder
 	remoteAddr net.Addr
 	localAddr  net.Addr
-	handler    handler.ConnectionHandler
+
+	server     iface.Server
+	decoder    decoder.Decoder
+	msgHandler handler.ConnectionHandler
+
+	buffer *bytes.Buffer
 
 	onActive func(conn iface.Connection) // 钩子函数，当连接建立的时候调用
 	onClose  func(conn iface.Connection) // 钩子函数，当连接断开的时候调用
@@ -31,9 +35,9 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 		decoder:    server.GetDecoder(),
 		remoteAddr: conn.RemoteAddr(),
 		localAddr:  conn.LocalAddr(),
-		handler:    handler.NewDefaultConnectionHandler(),
 		onActive:   server.GetConnOnActiveFunc(),
 		onClose:    server.GetConnOnCloseFunc(),
+		msgHandler: server.GetMsgHandler(),
 	}
 }
 
@@ -78,8 +82,9 @@ func (c *Connection) StartReader() {
 		if err != nil {
 			break
 		}
+		// todo: 写入连接的缓冲区后进行处理数据
 		// 处理数据
-		c.handler.ConnectionRead(context.Background(), readBytes[:n])
+		c.msgHandler.ConnectionRead(context.Background(), readBytes[:n])
 	}
 
 	if c.onClose != nil {

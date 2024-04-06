@@ -1,6 +1,9 @@
 package iface
 
-import "github.com/ningzining/lazynet/decoder"
+import (
+	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/handler"
+)
 
 type Server interface {
 	Start() error
@@ -8,6 +11,9 @@ type Server interface {
 
 	SetDecoder(decoder decoder.Decoder)
 	GetDecoder() decoder.Decoder
+
+	SetMsgHandler(handler handler.ConnectionHandler)
+	GetMsgHandler() handler.ConnectionHandler
 
 	SetConnOnActiveFunc(func(conn Connection))
 	GetConnOnActiveFunc() func(conn Connection)
