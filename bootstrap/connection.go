@@ -3,8 +3,9 @@ package bootstrap
 import (
 	"bytes"
 	"context"
-	"github.com/ningzining/lazynet/decoder"
 	"net"
+
+	"github.com/ningzining/lazynet/decoder"
 
 	log "github.com/ningzining/L-log"
 	"github.com/ningzining/lazynet/handler"
@@ -38,6 +39,7 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 		onActive:   server.GetConnOnActiveFunc(),
 		onClose:    server.GetConnOnCloseFunc(),
 		msgHandler: server.GetMsgHandler(),
+		buffer:     bytes.NewBuffer(make([]byte, 0, 4096)),
 	}
 }
 
@@ -82,11 +84,22 @@ func (c *Connection) StartReader() {
 		if err != nil {
 			break
 		}
-		// todo: 写入连接的缓冲区后进行处理数据
-		// 处理数据
-		c.msgHandler.ConnectionRead(context.Background(), readBytes[:n])
+		// 写入连接的缓冲区
+		c.buffer.Write(readBytes[:n])
+
+		// 一个数据包可能包含多个数据帧的情况，所以需要循环解码
+		for {
+			// 使用注册的解码器进行解码
+			frameMsg, err := c.decoder.Decode(c.buffer)
+			if err != nil {
+				break
+			}
+			// 读取每一帧的数据并进行处理
+			c.msgHandler.ConnectionRead(context.Background(), frameMsg)
+		}
 	}
 
+	// 钩子函数
 	if c.onClose != nil {
 		c.onClose(c)
 	}
