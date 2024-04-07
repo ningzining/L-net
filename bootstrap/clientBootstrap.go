@@ -2,7 +2,8 @@ package bootstrap
 
 import (
 	"github.com/ningzining/lazynet/encoder"
-	"github.com/ningzining/lazynet/handler"
+	"github.com/ningzining/lazynet/iface"
+
 	"net"
 )
 
@@ -10,7 +11,7 @@ type ClientBootstrap struct {
 	addr        string
 	conn        net.Conn
 	encoder     encoder.Encoder
-	handlerList []handler.ChannelHandler
+	handlerList []iface.ChannelHandler
 }
 
 func NewClientBootstrap(addr string) *ClientBootstrap {
@@ -53,4 +54,14 @@ func (c *ClientBootstrap) Write(source []byte) error {
 	}
 
 	return nil
+}
+
+func (c *ClientBootstrap) Read() ([]byte, error) {
+	bytes := make([]byte, 1024)
+	n, err := c.conn.Read(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes[:n], nil
 }

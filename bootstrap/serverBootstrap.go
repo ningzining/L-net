@@ -14,10 +14,10 @@ type ServerBootstrap struct {
 	ip   string
 	port int
 
-	decoder          decoder.Decoder           // 解码器
-	msgHandler       handler.ConnectionHandler // 消息处理器
-	connOnActiveFunc func(conn iface.Connection)
-	connOnCloseFunc  func(conn iface.Connection)
+	decoder           decoder.Decoder         // 解码器
+	connectionHandler iface.ConnectionHandler // 消息处理器
+	connOnActiveFunc  func(conn iface.Connection)
+	connOnCloseFunc   func(conn iface.Connection)
 }
 
 // 创建默认服务
@@ -33,12 +33,12 @@ func NewServerBootstrapWithConfig(config *conf.Config, opts ...Option) iface.Ser
 // 使用配置创建服务
 func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	s := &ServerBootstrap{
-		ip:               config.Host,
-		port:             config.Port,
-		decoder:          nil,
-		msgHandler:       handler.NewDefaultConnectionHandler(),
-		connOnActiveFunc: nil,
-		connOnCloseFunc:  nil,
+		ip:                config.Host,
+		port:              config.Port,
+		decoder:           nil,
+		connectionHandler: handler.NewDefaultConnectionHandler(),
+		connOnActiveFunc:  nil,
+		connOnCloseFunc:   nil,
 	}
 
 	for _, opt := range opts {
@@ -85,12 +85,12 @@ func (s *ServerBootstrap) GetDecoder() decoder.Decoder {
 	return s.decoder
 }
 
-func (s *ServerBootstrap) SetMsgHandler(handler handler.ConnectionHandler) {
-	s.msgHandler = handler
+func (s *ServerBootstrap) SetConnectionHandler(handler iface.ConnectionHandler) {
+	s.connectionHandler = handler
 }
 
-func (s *ServerBootstrap) GetMsgHandler() handler.ConnectionHandler {
-	return s.msgHandler
+func (s *ServerBootstrap) GetConnectionHandler() iface.ConnectionHandler {
+	return s.connectionHandler
 }
 
 func (s *ServerBootstrap) SetConnOnActiveFunc(f func(conn iface.Connection)) {

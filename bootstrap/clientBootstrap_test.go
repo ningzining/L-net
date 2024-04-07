@@ -15,6 +15,16 @@ func TestStartClientBootstrap1(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	go func() {
+		for {
+			data, err := clientBootstrap.Read()
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			t.Log(string(data))
+		}
+	}()
 
 	// 每次发送一个数据包
 	for {

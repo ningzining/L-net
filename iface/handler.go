@@ -1,4 +1,4 @@
-package handler
+package iface
 
 import "context"
 
@@ -7,5 +7,5 @@ type ChannelHandler interface {
 }
 
 type ConnectionHandler interface {
-	ConnectionRead(ctx context.Context, msg []byte)
+	ConnectionRead(ctx Context, msg []byte)
 }

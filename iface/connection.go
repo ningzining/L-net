@@ -11,4 +11,5 @@ type Connection interface {
 	LocalAddr() net.Addr
 	Start()
 	Stop()
+	Write(msg []byte) error
 }

@@ -20,7 +20,7 @@ type Connection struct {
 
 	server     iface.Server
 	decoder    decoder.Decoder
-	msgHandler handler.ConnectionHandler
+	msgHandler iface.ConnectionHandler
 
 	readBuffer  *bytes.Buffer // 读取缓冲区
 	writeBuffer *bytes.Buffer // 写入缓冲区
@@ -39,7 +39,7 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 		localAddr:   conn.LocalAddr(),
 		onActive:    server.GetConnOnActiveFunc(),
 		onClose:     server.GetConnOnCloseFunc(),
-		msgHandler:  server.GetMsgHandler(),
+		msgHandler:  server.GetConnectionHandler(),
 		readBuffer:  bytes.NewBuffer(make([]byte, 0, 4096)),
 		writeBuffer: bytes.NewBuffer(make([]byte, 0, 4096)),
 	}
@@ -81,6 +81,7 @@ func (c *Connection) StartReader() {
 	}()
 
 	for {
+		ctx := handler.NewConnectionContext(context.Background(), c)
 		// 读取数据
 		readBytes := make([]byte, 1024)
 		n, err := c.conn.Read(readBytes)
@@ -95,10 +96,10 @@ func (c *Connection) StartReader() {
 			frames := c.decoder.Decode(c.readBuffer)
 			// 读取每一帧的数据并进行处理
 			for _, frame := range frames {
-				c.msgHandler.ConnectionRead(context.Background(), frame)
+				c.msgHandler.ConnectionRead(ctx, frame)
 			}
 		} else {
-			c.msgHandler.ConnectionRead(context.Background(), c.readBuffer.Bytes())
+			c.msgHandler.ConnectionRead(ctx, c.readBuffer.Bytes())
 			c.readBuffer.Reset()
 		}
 	}
@@ -126,6 +127,15 @@ func (c *Connection) callOnClose() {
 
 func (c *Connection) Stop() {
 	c.conn.Close()
+}
+
+func (c *Connection) Write(msg []byte) error {
+	_, err := c.conn.Write(msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 var _ iface.Connection = &Connection{}

@@ -1,11 +1,23 @@
 package handler
 
-import "context"
+import (
+	"context"
 
-type ChannelHandlerContext struct {
+	"github.com/ningzining/lazynet/iface"
+)
+
+type ConnectionContext struct {
 	context.Context
+	connection iface.Connection
 }
 
-func NewChannelHandlerContext(ctx context.Context) context.Context {
-	return &ChannelHandlerContext{Context: ctx}
+func NewConnectionContext(ctx context.Context, conn iface.Connection) iface.Context {
+	return &ConnectionContext{
+		Context:    ctx,
+		connection: conn,
+	}
+}
+
+func (c *ConnectionContext) GetConnection() iface.Connection {
+	return c.connection
 }
