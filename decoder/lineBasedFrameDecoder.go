@@ -18,7 +18,21 @@ func NewLineBasedFrameDecoder() Decoder {
 	return &LineBasedFrameDecoder{}
 }
 
-func (d LineBasedFrameDecoder) Decode(buffer *bytes.Buffer) ([]byte, error) {
+func (d LineBasedFrameDecoder) Decode(buffer *bytes.Buffer) [][]byte {
+	frames := make([][]byte, 0)
+	for {
+		decode, err := d.decode(buffer)
+		if err != nil {
+			return frames
+		}
+		// 正常数据帧，添加到结果当中
+		if len(decode) > 0 {
+			frames = append(frames, decode)
+		}
+	}
+}
+
+func (d LineBasedFrameDecoder) decode(buffer *bytes.Buffer) ([]byte, error) {
 	if index := strings.IndexByte(buffer.String(), lineBreaks); index == -1 {
 		return nil, errors.New("delimiter not found")
 	}

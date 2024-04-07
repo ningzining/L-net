@@ -2,11 +2,12 @@ package bootstrap
 
 import (
 	"fmt"
+	"net"
+
 	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/handler"
 	"github.com/ningzining/lazynet/iface"
-	"net"
 )
 
 type ServerBootstrap struct {
@@ -34,7 +35,7 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	s := &ServerBootstrap{
 		ip:               config.Host,
 		port:             config.Port,
-		decoder:          decoder.NewLineBasedFrameDecoder(),
+		decoder:          nil,
 		msgHandler:       handler.NewDefaultConnectionHandler(),
 		connOnActiveFunc: nil,
 		connOnCloseFunc:  nil,

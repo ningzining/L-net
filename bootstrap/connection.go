@@ -22,7 +22,8 @@ type Connection struct {
 	decoder    decoder.Decoder
 	msgHandler handler.ConnectionHandler
 
-	buffer *bytes.Buffer
+	readBuffer  *bytes.Buffer // 读取缓冲区
+	writeBuffer *bytes.Buffer // 写入缓冲区
 
 	onActive func(conn iface.Connection) // 钩子函数，当连接建立的时候调用
 	onClose  func(conn iface.Connection) // 钩子函数，当连接断开的时候调用
@@ -30,16 +31,17 @@ type Connection struct {
 
 func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Connection {
 	return &Connection{
-		server:     server,
-		conn:       conn,
-		connID:     connID,
-		decoder:    server.GetDecoder(),
-		remoteAddr: conn.RemoteAddr(),
-		localAddr:  conn.LocalAddr(),
-		onActive:   server.GetConnOnActiveFunc(),
-		onClose:    server.GetConnOnCloseFunc(),
-		msgHandler: server.GetMsgHandler(),
-		buffer:     bytes.NewBuffer(make([]byte, 0, 4096)),
+		server:      server,
+		conn:        conn,
+		connID:      connID,
+		decoder:     server.GetDecoder(),
+		remoteAddr:  conn.RemoteAddr(),
+		localAddr:   conn.LocalAddr(),
+		onActive:    server.GetConnOnActiveFunc(),
+		onClose:     server.GetConnOnCloseFunc(),
+		msgHandler:  server.GetMsgHandler(),
+		readBuffer:  bytes.NewBuffer(make([]byte, 0, 4096)),
+		writeBuffer: bytes.NewBuffer(make([]byte, 0, 4096)),
 	}
 }
 
@@ -60,13 +62,14 @@ func (c *Connection) LocalAddr() net.Addr {
 }
 
 func (c *Connection) Start() {
-	if c.onActive != nil {
-		c.onActive(c)
-	}
+	// 执行连接建立的钩子函数
+	c.callOnActive()
 
+	// 全双工通信，可以接收数据也可以写入数据
 	// 启动阅读器
 	go c.StartReader()
-	// todo: 启动写入器
+	// 启动写入器
+	go c.StartWriter()
 }
 
 func (c *Connection) StartReader() {
@@ -85,21 +88,37 @@ func (c *Connection) StartReader() {
 			break
 		}
 		// 写入连接的缓冲区
-		c.buffer.Write(readBytes[:n])
-
-		// 一个数据包可能包含多个数据帧的情况，所以需要循环解码
-		for {
-			// 使用注册的解码器进行解码
-			frameMsg, err := c.decoder.Decode(c.buffer)
-			if err != nil {
-				break
-			}
+		c.readBuffer.Write(readBytes[:n])
+		// 使用注册的解码器进行解码
+		if c.decoder != nil {
+			// 一个数据包可能包含多个数据帧的情况，所以需要循环处理
+			frames := c.decoder.Decode(c.readBuffer)
 			// 读取每一帧的数据并进行处理
-			c.msgHandler.ConnectionRead(context.Background(), frameMsg)
+			for _, frame := range frames {
+				c.msgHandler.ConnectionRead(context.Background(), frame)
+			}
+		} else {
+			c.msgHandler.ConnectionRead(context.Background(), c.readBuffer.Bytes())
+			c.readBuffer.Reset()
 		}
 	}
 
-	// 钩子函数
+	// 执行连接关闭的钩子函数
+	c.callOnClose()
+}
+
+// todo: 实现写入器
+func (c *Connection) StartWriter() {
+
+}
+
+func (c *Connection) callOnActive() {
+	if c.onActive != nil {
+		c.onActive(c)
+	}
+}
+
+func (c *Connection) callOnClose() {
 	if c.onClose != nil {
 		c.onClose(c)
 	}

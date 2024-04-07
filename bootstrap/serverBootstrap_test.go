@@ -1,12 +1,31 @@
 package bootstrap
 
 import (
-	"github.com/ningzining/lazynet/iface"
 	"log"
 	"testing"
+
+	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/iface"
 )
 
-func TestStart(t *testing.T) {
+func TestStart1(t *testing.T) {
+	serverBootstrap := NewServerBootstrap(WithPort(8999))
+	serverBootstrap.SetConnOnActiveFunc(func(conn iface.Connection) {
+		log.Printf("remoteAddr: %s, connection on active", conn.RemoteAddr())
+	})
+	serverBootstrap.SetConnOnCloseFunc(func(conn iface.Connection) {
+		log.Printf("remoteAddr: %s, connection on close", conn.RemoteAddr())
+	})
+	serverBootstrap.SetDecoder(decoder.NewLineBasedFrameDecoder())
+
+	t.Log("tcp server start success")
+	if err := serverBootstrap.Start(); err != nil {
+		t.Error(err)
+		return
+	}
+}
+
+func TestStart2(t *testing.T) {
 	serverBootstrap := NewServerBootstrap(WithPort(8999))
 	serverBootstrap.SetConnOnActiveFunc(func(conn iface.Connection) {
 		log.Printf("remoteAddr: %s, connection on active", conn.RemoteAddr())
@@ -20,5 +39,4 @@ func TestStart(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
 }
