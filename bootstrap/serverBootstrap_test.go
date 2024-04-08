@@ -20,7 +20,6 @@ func TestStart1(t *testing.T) {
 	serverBootstrap.SetDecoder(decoder.NewLineBasedFrameDecoder())
 	serverBootstrap.AddConnectionHandler(handler.NewDefaultConnectionHandler())
 
-	t.Log("tcp server start success")
 	if err := serverBootstrap.Start(); err != nil {
 		t.Error(err)
 		return

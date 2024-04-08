@@ -40,8 +40,8 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 		onActive:    server.GetConnOnActiveFunc(),
 		onClose:     server.GetConnOnCloseFunc(),
 		handler:     server.GetConnectionHandler(),
-		readBuffer:  bytes.NewBuffer(make([]byte, 0, 4096)),
-		writeBuffer: bytes.NewBuffer(make([]byte, 0, 4096)),
+		readBuffer:  bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
+		writeBuffer: bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
 	}
 }
 
@@ -83,7 +83,7 @@ func (c *Connection) StartReader() {
 	for {
 		ctx := handler.NewConnectionContext(context.Background(), c)
 		// 读取数据
-		readBytes := make([]byte, 1024)
+		readBytes := make([]byte, c.server.GetConfig().MaxPackageSize)
 		n, err := c.conn.Read(readBytes)
 		if err != nil {
 			break

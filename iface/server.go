@@ -1,12 +1,15 @@
 package iface
 
 import (
+	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/decoder"
 )
 
 type Server interface {
 	Start() error
 	Stop()
+
+	GetConfig() *conf.Config
 
 	SetDecoder(decoder decoder.Decoder)
 	GetDecoder() decoder.Decoder

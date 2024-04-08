@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"net"
 
+	log "github.com/ningzining/L-log"
 	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/iface"
 )
 
 type ServerBootstrap struct {
-	ip   string
-	port int
+	config conf.Config
 
 	decoder           decoder.Decoder         // 解码器
 	connectionHandler iface.ConnectionHandler // 消息处理器
@@ -34,8 +34,10 @@ func NewServerBootstrapWithConfig(config *conf.Config, opts ...Option) iface.Ser
 // 使用配置创建服务
 func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	s := &ServerBootstrap{
-		ip:                config.Host,
-		port:              config.Port,
+		config: conf.Config{
+			Host: config.Host,
+			Port: config.Port,
+		},
 		decoder:           nil,
 		connectionHandler: nil,
 		connOnActiveFunc:  nil,
@@ -54,15 +56,15 @@ func (s *ServerBootstrap) Start() error {
 		return err
 	}
 
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.ip, s.port))
+	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.config.Host, s.config.Port))
 	if err != nil {
 		return err
 	}
-
 	defer listener.Close()
 
-	var cid uint32
+	log.Infof("tcp server listen at: %s", listener.Addr().String())
 
+	var cid uint32
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -89,6 +91,11 @@ func (s *ServerBootstrap) verify() error {
 
 	return nil
 }
+
+func (s *ServerBootstrap) GetConfig() *conf.Config {
+	return &s.config
+}
+
 func (s *ServerBootstrap) SetDecoder(decoder decoder.Decoder) {
 	s.decoder = decoder
 }
