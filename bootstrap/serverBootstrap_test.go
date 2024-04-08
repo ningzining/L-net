@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/handler"
 	"github.com/ningzining/lazynet/iface"
 )
 
@@ -17,6 +18,7 @@ func TestStart1(t *testing.T) {
 		log.Printf("remoteAddr: %s, connection on close", conn.RemoteAddr())
 	})
 	serverBootstrap.SetDecoder(decoder.NewLineBasedFrameDecoder())
+	serverBootstrap.AddConnectionHandler(handler.NewDefaultConnectionHandler())
 
 	t.Log("tcp server start success")
 	if err := serverBootstrap.Start(); err != nil {

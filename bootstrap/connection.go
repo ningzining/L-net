@@ -18,9 +18,9 @@ type Connection struct {
 	remoteAddr net.Addr
 	localAddr  net.Addr
 
-	server     iface.Server
-	decoder    decoder.Decoder
-	msgHandler iface.ConnectionHandler
+	server  iface.Server
+	decoder decoder.Decoder
+	handler iface.ConnectionHandler
 
 	readBuffer  *bytes.Buffer // 读取缓冲区
 	writeBuffer *bytes.Buffer // 写入缓冲区
@@ -39,7 +39,7 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 		localAddr:   conn.LocalAddr(),
 		onActive:    server.GetConnOnActiveFunc(),
 		onClose:     server.GetConnOnCloseFunc(),
-		msgHandler:  server.GetConnectionHandler(),
+		handler:     server.GetConnectionHandler(),
 		readBuffer:  bytes.NewBuffer(make([]byte, 0, 4096)),
 		writeBuffer: bytes.NewBuffer(make([]byte, 0, 4096)),
 	}
@@ -96,10 +96,14 @@ func (c *Connection) StartReader() {
 			frames := c.decoder.Decode(c.readBuffer)
 			// 读取每一帧的数据并进行处理
 			for _, frame := range frames {
-				c.msgHandler.ConnectionRead(ctx, frame)
+				c.handler.PreHandle(ctx, frame)
+				c.handler.ConnectionRead(ctx, frame)
+				c.handler.PostHandle(ctx, frame)
 			}
 		} else {
-			c.msgHandler.ConnectionRead(ctx, c.readBuffer.Bytes())
+			c.handler.PreHandle(ctx, c.readBuffer.Bytes())
+			c.handler.ConnectionRead(ctx, c.readBuffer.Bytes())
+			c.handler.PostHandle(ctx, c.readBuffer.Bytes())
 			c.readBuffer.Reset()
 		}
 	}
@@ -108,6 +112,7 @@ func (c *Connection) StartReader() {
 	c.callOnClose()
 }
 
+// StartWriter
 // todo: 实现写入器
 func (c *Connection) StartWriter() {
 

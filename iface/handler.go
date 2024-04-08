@@ -7,5 +7,7 @@ type ChannelHandler interface {
 }
 
 type ConnectionHandler interface {
+	PreHandle(ctx Context, msg []byte)
 	ConnectionRead(ctx Context, msg []byte)
+	PostHandle(ctx Context, msg []byte)
 }

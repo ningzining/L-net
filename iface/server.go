@@ -11,7 +11,7 @@ type Server interface {
 	SetDecoder(decoder decoder.Decoder)
 	GetDecoder() decoder.Decoder
 
-	SetConnectionHandler(handler ConnectionHandler)
+	AddConnectionHandler(handler ConnectionHandler)
 	GetConnectionHandler() ConnectionHandler
 
 	SetConnOnActiveFunc(func(conn Connection))

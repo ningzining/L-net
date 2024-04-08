@@ -1,12 +1,12 @@
 package bootstrap
 
 import (
+	"errors"
 	"fmt"
 	"net"
 
 	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/decoder"
-	"github.com/ningzining/lazynet/handler"
 	"github.com/ningzining/lazynet/iface"
 )
 
@@ -16,16 +16,17 @@ type ServerBootstrap struct {
 
 	decoder           decoder.Decoder         // 解码器
 	connectionHandler iface.ConnectionHandler // 消息处理器
-	connOnActiveFunc  func(conn iface.Connection)
-	connOnCloseFunc   func(conn iface.Connection)
+
+	connOnActiveFunc func(conn iface.Connection)
+	connOnCloseFunc  func(conn iface.Connection)
 }
 
-// 创建默认服务
+// NewServerBootstrap 创建默认服务
 func NewServerBootstrap(opts ...Option) iface.Server {
 	return newServerWithConfig(conf.DefaultConfig(), opts...)
 }
 
-// 自定义配置创建服务
+// NewServerBootstrapWithConfig 自定义配置创建服务
 func NewServerBootstrapWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	return newServerWithConfig(config, opts...)
 }
@@ -36,7 +37,7 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 		ip:                config.Host,
 		port:              config.Port,
 		decoder:           nil,
-		connectionHandler: handler.NewDefaultConnectionHandler(),
+		connectionHandler: nil,
 		connOnActiveFunc:  nil,
 		connOnCloseFunc:   nil,
 	}
@@ -49,6 +50,10 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 }
 
 func (s *ServerBootstrap) Start() error {
+	if err := s.verify(); err != nil {
+		return err
+	}
+
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.ip, s.port))
 	if err != nil {
 		return err
@@ -77,6 +82,13 @@ func (s *ServerBootstrap) Stop() {
 
 }
 
+func (s *ServerBootstrap) verify() error {
+	if s.connectionHandler == nil {
+		return errors.New("connectionHandler must be added")
+	}
+
+	return nil
+}
 func (s *ServerBootstrap) SetDecoder(decoder decoder.Decoder) {
 	s.decoder = decoder
 }
@@ -85,7 +97,7 @@ func (s *ServerBootstrap) GetDecoder() decoder.Decoder {
 	return s.decoder
 }
 
-func (s *ServerBootstrap) SetConnectionHandler(handler iface.ConnectionHandler) {
+func (s *ServerBootstrap) AddConnectionHandler(handler iface.ConnectionHandler) {
 	s.connectionHandler = handler
 }
 
