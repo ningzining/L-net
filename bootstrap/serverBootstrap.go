@@ -35,8 +35,9 @@ func NewServerBootstrapWithConfig(config *conf.Config, opts ...Option) iface.Ser
 func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	s := &ServerBootstrap{
 		config: conf.Config{
-			Host: config.Host,
-			Port: config.Port,
+			Host:           config.Host,
+			Port:           config.Port,
+			MaxPackageSize: config.MaxPackageSize,
 		},
 		decoder:           nil,
 		connectionHandler: nil,
