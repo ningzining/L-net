@@ -8,13 +8,13 @@ import (
 )
 
 func TestStartClientBootstrap1(t *testing.T) {
-	clientBootstrap := NewClientBootstrap("127.0.0.1:8999").
-		RegisterEncoder(encoder.NewDelimiterBasedFrameDecoder('\n'))
-
+	clientBootstrap := NewClientBootstrap("127.0.0.1:8999")
+	clientBootstrap.SetEncoder(encoder.NewDelimiterBasedFrameDecoder('\n'))
 	if err := clientBootstrap.Start(); err != nil {
 		t.Error(err)
 		return
 	}
+
 	go func() {
 		for {
 			data, err := clientBootstrap.Read()
@@ -38,8 +38,8 @@ func TestStartClientBootstrap1(t *testing.T) {
 }
 
 func TestStartClientBootstrap2(t *testing.T) {
-	clientBootstrap := NewClientBootstrap("127.0.0.1:8999").
-		RegisterEncoder(encoder.NewDelimiterBasedFrameDecoder('\n'))
+	clientBootstrap := NewClientBootstrap("127.0.0.1:8999")
+	clientBootstrap.SetEncoder(encoder.NewDelimiterBasedFrameDecoder('\n'))
 
 	if err := clientBootstrap.Start(); err != nil {
 		t.Error(err)

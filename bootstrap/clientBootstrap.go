@@ -20,10 +20,14 @@ func NewClientBootstrap(addr string) *ClientBootstrap {
 	}
 }
 
-// RegisterEncoder 注册编码器
-func (c *ClientBootstrap) RegisterEncoder(encoder encoder.Encoder) *ClientBootstrap {
+// SetEncoder 设置编码器
+func (c *ClientBootstrap) SetEncoder(encoder encoder.Encoder) {
 	c.encoder = encoder
-	return c
+}
+
+// GetEncoder 获取编码器
+func (c *ClientBootstrap) GetEncoder() encoder.Encoder {
+	return c.encoder
 }
 
 // Start 启动客户端
@@ -34,6 +38,20 @@ func (c *ClientBootstrap) Start() error {
 	}
 	c.conn = conn
 	return nil
+}
+
+func (c *ClientBootstrap) Stop() {
+	c.conn.Close()
+}
+
+func (c *ClientBootstrap) Read() ([]byte, error) {
+	bytes := make([]byte, 1024)
+	n, err := c.conn.Read(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes[:n], nil
 }
 
 // 往连接中写入字节数组
@@ -54,14 +72,4 @@ func (c *ClientBootstrap) Write(source []byte) error {
 	}
 
 	return nil
-}
-
-func (c *ClientBootstrap) Read() ([]byte, error) {
-	bytes := make([]byte, 1024)
-	n, err := c.conn.Read(bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes[:n], nil
 }
