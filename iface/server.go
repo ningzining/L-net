@@ -3,6 +3,7 @@ package iface
 import (
 	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/encoder"
 )
 
 type Server interface {
@@ -13,6 +14,9 @@ type Server interface {
 
 	SetDecoder(decoder decoder.Decoder)
 	GetDecoder() decoder.Decoder
+
+	SetEncoder(decoder encoder.Encoder)
+	GetEncoder() encoder.Encoder
 
 	AddConnectionHandler(handler ConnectionHandler)
 	GetConnectionHandler() ConnectionHandler

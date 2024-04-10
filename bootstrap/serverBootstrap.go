@@ -8,6 +8,7 @@ import (
 	log "github.com/ningzining/L-log"
 	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
 )
 
@@ -15,6 +16,7 @@ type ServerBootstrap struct {
 	config conf.Config
 
 	decoder           decoder.Decoder         // 解码器
+	encoder           encoder.Encoder         // 编码器
 	connectionHandler iface.ConnectionHandler // 消息处理器
 
 	connOnActiveFunc func(conn iface.Connection)
@@ -103,6 +105,14 @@ func (s *ServerBootstrap) SetDecoder(decoder decoder.Decoder) {
 
 func (s *ServerBootstrap) GetDecoder() decoder.Decoder {
 	return s.decoder
+}
+
+func (s *ServerBootstrap) SetEncoder(encoder encoder.Encoder) {
+	s.encoder = encoder
+}
+
+func (s *ServerBootstrap) GetEncoder() encoder.Encoder {
+	return s.encoder
 }
 
 func (s *ServerBootstrap) AddConnectionHandler(handler iface.ConnectionHandler) {

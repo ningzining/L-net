@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/encoder"
 
 	log "github.com/ningzining/L-log"
 	"github.com/ningzining/lazynet/handler"
@@ -19,7 +20,8 @@ type Connection struct {
 	localAddr  net.Addr
 
 	server  iface.Server
-	decoder decoder.Decoder
+	decoder decoder.Decoder // 解码器
+	encoder encoder.Encoder // 编码器
 	handler iface.ConnectionHandler
 
 	readBuffer  *bytes.Buffer // 读取缓冲区
@@ -35,6 +37,7 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 		conn:        conn,
 		connID:      connID,
 		decoder:     server.GetDecoder(),
+		encoder:     server.GetEncoder(),
 		remoteAddr:  conn.RemoteAddr(),
 		localAddr:   conn.LocalAddr(),
 		onActive:    server.GetConnOnActiveFunc(),
@@ -135,8 +138,15 @@ func (c *Connection) Stop() {
 }
 
 func (c *Connection) Write(msg []byte) error {
-	_, err := c.conn.Write(msg)
-	if err != nil {
+	res := msg
+	if c.encoder != nil {
+		var err error
+		if res, err = c.encoder.Encode(res); err != nil {
+			return err
+		}
+	}
+
+	if _, err := c.conn.Write(res); err != nil {
 		return err
 	}
 
