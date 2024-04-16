@@ -21,7 +21,7 @@ func (d *DefaultConnectionHandler) PreHandle(ctx iface.Context, msg []byte) {
 
 func (d *DefaultConnectionHandler) ConnectionRead(ctx iface.Context, msg []byte) {
 	log.Println(string(msg))
-	if err := ctx.GetConnection().Write([]byte(fmt.Sprintf("server: %s", msg))); err != nil {
+	if err := ctx.GetConnection().Write([]byte(fmt.Sprintf("server1: %s", msg))); err != nil {
 		return
 	}
 }

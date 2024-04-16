@@ -10,7 +10,9 @@ import (
 type BaseConnectionHandler struct {
 }
 
-var _ iface.ConnectionHandler = &BaseConnectionHandler{}
+func NewBaseConnectionHandler() iface.ConnectionHandler {
+	return &BaseConnectionHandler{}
+}
 
 func (d *BaseConnectionHandler) PreHandle(ctx iface.Context, msg []byte) {}
 

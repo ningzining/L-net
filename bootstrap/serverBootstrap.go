@@ -1,7 +1,6 @@
 package bootstrap
 
 import (
-	"errors"
 	"fmt"
 	"net"
 
@@ -10,14 +9,16 @@ import (
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
+	"github.com/ningzining/lazynet/pipeline"
 )
 
 type ServerBootstrap struct {
 	config conf.Config
 
-	decoder           decoder.Decoder         // 解码器
-	encoder           encoder.Encoder         // 编码器
-	connectionHandler iface.ConnectionHandler // 消息处理器
+	decoder decoder.Decoder // 解码器
+	encoder encoder.Encoder // 编码器
+	//connectionHandler iface.ConnectionHandler // 消息处理器
+	pipeline iface.Pipeline // 处理器管道
 
 	connOnActiveFunc func(conn iface.Connection)
 	connOnCloseFunc  func(conn iface.Connection)
@@ -41,10 +42,10 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 			Port:           config.Port,
 			MaxPackageSize: config.MaxPackageSize,
 		},
-		decoder:           nil,
-		connectionHandler: nil,
-		connOnActiveFunc:  nil,
-		connOnCloseFunc:   nil,
+		decoder:          nil,
+		pipeline:         pipeline.NewPipeline(),
+		connOnActiveFunc: nil,
+		connOnCloseFunc:  nil,
 	}
 
 	for _, opt := range opts {
@@ -88,9 +89,9 @@ func (s *ServerBootstrap) Stop() {
 }
 
 func (s *ServerBootstrap) verify() error {
-	if s.connectionHandler == nil {
-		return errors.New("connectionHandler must be added")
-	}
+	//if s.connectionHandler == nil {
+	//	return errors.New("connectionHandler must be added")
+	//}
 
 	return nil
 }
@@ -116,11 +117,11 @@ func (s *ServerBootstrap) GetEncoder() encoder.Encoder {
 }
 
 func (s *ServerBootstrap) AddConnectionHandler(handler iface.ConnectionHandler) {
-	s.connectionHandler = handler
+	s.pipeline.AddLast(handler)
 }
 
-func (s *ServerBootstrap) GetConnectionHandler() iface.ConnectionHandler {
-	return s.connectionHandler
+func (s *ServerBootstrap) GetPipeline() iface.Pipeline {
+	return s.pipeline
 }
 
 func (s *ServerBootstrap) SetConnOnActiveFunc(f func(conn iface.Connection)) {

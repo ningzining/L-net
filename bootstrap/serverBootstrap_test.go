@@ -21,6 +21,7 @@ func TestStart1(t *testing.T) {
 	serverBootstrap.SetDecoder(decoder.NewLineBasedFrameDecoder())
 	serverBootstrap.SetEncoder(encoder.NewLineBasedFrameDecoder())
 	serverBootstrap.AddConnectionHandler(handler.NewDefaultConnectionHandler())
+	serverBootstrap.AddConnectionHandler(handler.NewDefaultConnectionHandler2())
 
 	if err := serverBootstrap.Start(); err != nil {
 		t.Error(err)

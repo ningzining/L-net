@@ -22,7 +22,8 @@ type Connection struct {
 	server  iface.Server
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
-	handler iface.ConnectionHandler
+
+	pipeline iface.Pipeline // 处理器管道
 
 	readBuffer  *bytes.Buffer // 读取缓冲区
 	writeBuffer *bytes.Buffer // 写入缓冲区
@@ -42,7 +43,7 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 		localAddr:   conn.LocalAddr(),
 		onActive:    server.GetConnOnActiveFunc(),
 		onClose:     server.GetConnOnCloseFunc(),
-		handler:     server.GetConnectionHandler(),
+		pipeline:    server.GetPipeline(),
 		readBuffer:  bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
 		writeBuffer: bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
 	}
@@ -99,14 +100,10 @@ func (c *Connection) StartReader() {
 			frames := c.decoder.Decode(c.readBuffer)
 			// 读取每一帧的数据并进行处理
 			for _, frame := range frames {
-				c.handler.PreHandle(ctx, frame)
-				c.handler.ConnectionRead(ctx, frame)
-				c.handler.PostHandle(ctx, frame)
+				c.pipeline.Handle(ctx, frame)
 			}
 		} else {
-			c.handler.PreHandle(ctx, c.readBuffer.Bytes())
-			c.handler.ConnectionRead(ctx, c.readBuffer.Bytes())
-			c.handler.PostHandle(ctx, c.readBuffer.Bytes())
+			c.pipeline.Handle(ctx, c.readBuffer.Bytes())
 			c.readBuffer.Reset()
 		}
 	}

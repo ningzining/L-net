@@ -19,7 +19,7 @@ type Server interface {
 	GetEncoder() encoder.Encoder
 
 	AddConnectionHandler(handler ConnectionHandler)
-	GetConnectionHandler() ConnectionHandler
+	GetPipeline() Pipeline
 
 	SetConnOnActiveFunc(func(conn Connection))
 	GetConnOnActiveFunc() func(conn Connection)
