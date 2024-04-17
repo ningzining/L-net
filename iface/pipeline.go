@@ -2,5 +2,8 @@ package iface
 
 type Pipeline interface {
 	AddLast(handler ConnectionHandler)
-	Handle(ctx Context, msg []byte)
+	Handle(msg []byte)
+
+	GetConnection() Connection
+	SetConnection(conn Connection)
 }

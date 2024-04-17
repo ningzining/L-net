@@ -2,14 +2,11 @@ package bootstrap
 
 import (
 	"bytes"
-	"context"
 	"net"
 
+	log "github.com/ningzining/L-log"
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
-
-	log "github.com/ningzining/L-log"
-	"github.com/ningzining/lazynet/handler"
 	"github.com/ningzining/lazynet/iface"
 )
 
@@ -33,7 +30,7 @@ type Connection struct {
 }
 
 func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Connection {
-	return &Connection{
+	c := &Connection{
 		server:      server,
 		conn:        conn,
 		connID:      connID,
@@ -47,6 +44,10 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 		readBuffer:  bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
 		writeBuffer: bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
 	}
+
+	c.pipeline.SetConnection(c)
+
+	return c
 }
 
 func (c *Connection) ConnID() uint32 {
@@ -85,7 +86,6 @@ func (c *Connection) StartReader() {
 	}()
 
 	for {
-		ctx := handler.NewConnectionContext(context.Background(), c)
 		// 读取数据
 		readBytes := make([]byte, c.server.GetConfig().MaxPackageSize)
 		n, err := c.conn.Read(readBytes)
@@ -100,10 +100,10 @@ func (c *Connection) StartReader() {
 			frames := c.decoder.Decode(c.readBuffer)
 			// 读取每一帧的数据并进行处理
 			for _, frame := range frames {
-				c.pipeline.Handle(ctx, frame)
+				c.pipeline.Handle(frame)
 			}
 		} else {
-			c.pipeline.Handle(ctx, c.readBuffer.Bytes())
+			c.pipeline.Handle(c.readBuffer.Bytes())
 			c.readBuffer.Reset()
 		}
 	}

@@ -24,6 +24,7 @@ func (d *DefaultConnectionHandler) ConnectionRead(ctx iface.Context, msg []byte)
 	if err := ctx.GetConnection().Write([]byte(fmt.Sprintf("server1: %s", msg))); err != nil {
 		return
 	}
+	ctx.FireConnectionRead(msg)
 }
 
 func (d *DefaultConnectionHandler) PostHandle(ctx iface.Context, msg []byte) {

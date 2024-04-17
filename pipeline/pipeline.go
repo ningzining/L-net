@@ -1,46 +1,62 @@
 package pipeline
 
 import (
+	"context"
+
 	"github.com/ningzining/lazynet/iface"
 )
 
 type Pipeline struct {
-	head *Node
-	tail *Node
+	head *ConnectionContext
+	tail *ConnectionContext
+
+	connection iface.Connection
 }
 
-func NewPipeline() iface.Pipeline {
-	head := NewNode(nil)
-	tail := NewNode(nil)
+func NewPipeline(conn iface.Connection) iface.Pipeline {
+	p := &Pipeline{
+		connection: conn,
+	}
+	head := NewContext(context.Background(), p, nil)
+	tail := NewContext(context.Background(), p, nil)
+
 	head.next = tail
 	tail.prev = head
 
-	return &Pipeline{
-		head: head,
-		tail: tail,
-	}
+	p.head = head
+	p.tail = tail
+
+	return p
 }
 
 func (p *Pipeline) AddLast(handler iface.ConnectionHandler) {
-	node := NewNode(handler)
-	p.tail.prev.next = node
-	node.prev = p.tail.prev
-
-	p.tail.prev = node
-	node.next = p.tail
+	ctx := NewContext(context.Background(), p, handler)
+	prev := p.tail.prev
+	ctx.prev = prev
+	ctx.next = p.tail
+	prev.next = ctx
+	p.tail.prev = ctx
 }
 
-func (p *Pipeline) Handle(ctx iface.Context, msg []byte) {
+func (p *Pipeline) Handle(msg []byte) {
 	node := p.head
 	for {
 		if node.next == nil || node.next.handler == nil {
 			return
 		}
 
-		node.next.handler.PreHandle(ctx, msg)
-		node.next.handler.ConnectionRead(ctx, msg)
-		node.next.handler.PostHandle(ctx, msg)
+		node.next.handler.PreHandle(node.next, msg)
+		node.next.handler.ConnectionRead(node.next, msg)
+		node.next.handler.PostHandle(node.next, msg)
 
-		node = node.next
+		return
 	}
+}
+
+func (p *Pipeline) GetConnection() iface.Connection {
+	return p.connection
+}
+
+func (p *Pipeline) SetConnection(conn iface.Connection) {
+	p.connection = conn
 }

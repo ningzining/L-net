@@ -17,7 +17,7 @@ type ServerBootstrap struct {
 
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
-	//connectionHandler iface.ConnectionHandler // 消息处理器
+
 	pipeline iface.Pipeline // 处理器管道
 
 	connOnActiveFunc func(conn iface.Connection)
@@ -43,7 +43,7 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 			MaxPackageSize: config.MaxPackageSize,
 		},
 		decoder:          nil,
-		pipeline:         pipeline.NewPipeline(),
+		pipeline:         pipeline.NewPipeline(nil),
 		connOnActiveFunc: nil,
 		connOnCloseFunc:  nil,
 	}
@@ -90,7 +90,7 @@ func (s *ServerBootstrap) Stop() {
 
 func (s *ServerBootstrap) verify() error {
 	//if s.connectionHandler == nil {
-	//	return errors.New("connectionHandler must be added")
+	//	return errors.NewContext("connectionHandler must be added")
 	//}
 
 	return nil
