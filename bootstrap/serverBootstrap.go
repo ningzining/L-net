@@ -9,7 +9,6 @@ import (
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
-	"github.com/ningzining/lazynet/pipeline"
 )
 
 type ServerBootstrap struct {
@@ -18,7 +17,7 @@ type ServerBootstrap struct {
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
 
-	pipeline iface.Pipeline // 处理器管道
+	handlers []iface.ConnectionHandler
 
 	connOnActiveFunc func(conn iface.Connection)
 	connOnCloseFunc  func(conn iface.Connection)
@@ -43,7 +42,7 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 			MaxPackageSize: config.MaxPackageSize,
 		},
 		decoder:          nil,
-		pipeline:         pipeline.NewPipeline(nil),
+		handlers:         make([]iface.ConnectionHandler, 0),
 		connOnActiveFunc: nil,
 		connOnCloseFunc:  nil,
 	}
@@ -117,11 +116,11 @@ func (s *ServerBootstrap) GetEncoder() encoder.Encoder {
 }
 
 func (s *ServerBootstrap) AddConnectionHandler(handler iface.ConnectionHandler) {
-	s.pipeline.AddLast(handler)
+	s.handlers = append(s.handlers, handler)
 }
 
-func (s *ServerBootstrap) GetPipeline() iface.Pipeline {
-	return s.pipeline
+func (s *ServerBootstrap) GetConnectionHandlers() []iface.ConnectionHandler {
+	return s.handlers
 }
 
 func (s *ServerBootstrap) SetConnOnActiveFunc(f func(conn iface.Connection)) {

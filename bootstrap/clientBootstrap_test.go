@@ -28,11 +28,11 @@ func TestStartClientBootstrap1(t *testing.T) {
 
 	// 每次发送一个数据包
 	for {
-		if err := clientBootstrap.Write([]byte("hello world")); err != nil {
+		if err := clientBootstrap.Write([]byte("hello world2")); err != nil {
 			t.Error(err)
 			return
 		}
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 2)
 	}
 
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
+	"github.com/ningzining/lazynet/pipeline"
 )
 
 type Connection struct {
@@ -40,12 +41,15 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 		localAddr:   conn.LocalAddr(),
 		onActive:    server.GetConnOnActiveFunc(),
 		onClose:     server.GetConnOnCloseFunc(),
-		pipeline:    server.GetPipeline(),
+		pipeline:    nil,
 		readBuffer:  bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
 		writeBuffer: bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
 	}
 
-	c.pipeline.SetConnection(c)
+	c.pipeline = pipeline.NewPipeline(c)
+	for _, handler := range server.GetConnectionHandlers() {
+		c.pipeline.AddLast(handler)
+	}
 
 	return c
 }
