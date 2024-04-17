@@ -7,8 +7,9 @@ import (
 type Context interface {
 	context.Context
 
+	GetHandler() ConnectionHandler
 	GetConnection() Connection
 
-	GetHandler() ConnectionHandler
+	DoHandle(msg []byte)
 	FireConnectionRead(msg []byte)
 }

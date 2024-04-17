@@ -39,17 +39,19 @@ func (p *Pipeline) AddLast(handler iface.ConnectionHandler) {
 }
 
 func (p *Pipeline) Handle(msg []byte) {
+	ctx := p.firstContext()
+
+	ctx.DoHandle(msg)
+}
+
+func (p *Pipeline) firstContext() iface.Context {
 	node := p.head
 	for {
-		if node.next == nil || node.next.handler == nil {
-			return
+		if node != nil && node.handler != nil {
+			return node
 		}
 
-		node.next.handler.PreHandle(node.next, msg)
-		node.next.handler.ConnectionRead(node.next, msg)
-		node.next.handler.PostHandle(node.next, msg)
-
-		return
+		node = node.next
 	}
 }
 

@@ -32,11 +32,16 @@ func (c *ConnectionContext) GetConnection() iface.Connection {
 	return c.pipeline.GetConnection()
 }
 
+func (c *ConnectionContext) DoHandle(msg []byte) {
+	c.handler.PreHandle(c, msg)
+	c.handler.ConnectionRead(c, msg)
+	c.handler.PostHandle(c, msg)
+}
+
 func (c *ConnectionContext) FireConnectionRead(msg []byte) {
 	if c.next == nil || c.next.GetHandler() == nil {
 		return
 	}
-	c.next.GetHandler().PreHandle(c.next, msg)
-	c.next.GetHandler().ConnectionRead(c.next, msg)
-	c.next.GetHandler().PostHandle(c.next, msg)
+
+	c.next.DoHandle(msg)
 }
