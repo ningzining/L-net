@@ -120,9 +120,6 @@ func (c *Connection) StartReader() {
 			c.readBuffer.Reset()
 		}
 	}
-
-	// 执行连接关闭的钩子函数
-	c.callOnClose()
 }
 
 // StartWriter
@@ -168,6 +165,9 @@ func (c *Connection) callOnClose() {
 }
 
 func (c *Connection) Stop() {
+	// 执行连接关闭的钩子函数
+	c.callOnClose()
+
 	// 关闭连接
 	c.conn.Close()
 
