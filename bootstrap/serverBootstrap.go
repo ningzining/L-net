@@ -14,7 +14,7 @@ import (
 )
 
 type ServerBootstrap struct {
-	config conf.Config
+	config *conf.Config
 
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
@@ -41,11 +41,7 @@ func NewServerBootstrapWithConfig(config *conf.Config, opts ...Option) iface.Ser
 // 使用配置创建服务
 func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	s := &ServerBootstrap{
-		config: conf.Config{
-			Host:           config.Host,
-			Port:           config.Port,
-			MaxPackageSize: config.MaxPackageSize,
-		},
+		config:           config,
 		decoder:          nil,
 		handlers:         make([]iface.ConnectionHandler, 0),
 		connOnActiveFunc: nil,
@@ -80,7 +76,8 @@ func (s *ServerBootstrap) Start() error {
 			continue
 		}
 
-		if s.connManager.Size() >= s.config.MaxPackageSize {
+		if s.connManager.Size() >= s.config.MaxConnSize {
+			log.Errorf("tcp server connection pool is full, max size: %d", s.config.MaxConnSize)
 			// todo: 返回超过最大连接数错误
 			conn.Close()
 			continue
@@ -112,7 +109,7 @@ func (s *ServerBootstrap) verify() error {
 }
 
 func (s *ServerBootstrap) GetConfig() *conf.Config {
-	return &s.config
+	return s.config
 }
 
 func (s *ServerBootstrap) SetDecoder(decoder decoder.Decoder) {

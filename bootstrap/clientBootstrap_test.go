@@ -1,9 +1,11 @@
 package bootstrap
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
+	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 )
 
@@ -22,7 +24,11 @@ func TestStartClientBootstrap1(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			t.Log(string(data))
+			frameDecoder := decoder.NewLineBasedFrameDecoder()
+			decode := frameDecoder.Decode(bytes.NewBuffer(data))
+			for _, frame := range decode {
+				t.Log(string(frame))
+			}
 		}
 	}()
 
