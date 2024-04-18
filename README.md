@@ -1,2 +1,2 @@
-# L-net
+# lazynet
 网络库

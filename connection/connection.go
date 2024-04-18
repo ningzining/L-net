@@ -1,4 +1,4 @@
-package bootstrap
+package connection
 
 import (
 	"bytes"
@@ -12,12 +12,13 @@ import (
 )
 
 type Connection struct {
+	server iface.Server // 隶属于哪个server
+
 	conn       net.Conn
 	connID     uint32
 	remoteAddr net.Addr
 	localAddr  net.Addr
 
-	server  iface.Server
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
 
@@ -53,6 +54,8 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 	for _, handler := range server.GetConnectionHandlers() {
 		c.pipeline.AddLast(handler)
 	}
+
+	c.server.GetConnManager().Add(c)
 
 	return c
 }
@@ -123,7 +126,7 @@ func (c *Connection) StartReader() {
 }
 
 // StartWriter
-// todo: 实现写入器
+// 实现写入器
 func (c *Connection) StartWriter() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -171,6 +174,9 @@ func (c *Connection) Stop() {
 	// 告知退出
 	c.exitChan <- struct{}{}
 
+	// 将当前连接从管理器移除
+	c.server.GetConnManager().Remove(c.connID)
+
 	// 回收资源
 	close(c.exitChan)
 	close(c.msgChan)
@@ -181,5 +187,3 @@ func (c *Connection) Write(msg []byte) error {
 
 	return nil
 }
-
-var _ iface.Connection = &Connection{}

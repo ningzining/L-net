@@ -26,4 +26,6 @@ type Server interface {
 
 	SetConnOnCloseFunc(func(conn Connection))
 	GetConnOnCloseFunc() func(conn Connection)
+
+	GetConnManager() ConnManager
 }

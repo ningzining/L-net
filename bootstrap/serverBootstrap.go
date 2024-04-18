@@ -7,6 +7,7 @@ import (
 
 	log "github.com/ningzining/L-log"
 	"github.com/ningzining/lazynet/conf"
+	"github.com/ningzining/lazynet/connection"
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
@@ -19,6 +20,9 @@ type ServerBootstrap struct {
 	encoder encoder.Encoder // 编码器
 
 	handlers []iface.ConnectionHandler
+
+	connManager iface.ConnManager
+	// todo: 消息分发器
 
 	connOnActiveFunc func(conn iface.Connection)
 	connOnCloseFunc  func(conn iface.Connection)
@@ -46,6 +50,7 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 		handlers:         make([]iface.ConnectionHandler, 0),
 		connOnActiveFunc: nil,
 		connOnCloseFunc:  nil,
+		connManager:      connection.NewConnManager(),
 	}
 
 	for _, opt := range opts {
@@ -75,17 +80,27 @@ func (s *ServerBootstrap) Start() error {
 			continue
 		}
 
+		if s.connManager.Size() >= s.config.MaxPackageSize {
+			// todo: 返回超过最大连接数错误
+			conn.Close()
+			continue
+		}
+
 		// 创建连接
-		connection := NewConnection(s, conn, cid)
+		newConnection := connection.NewConnection(s, conn, cid)
 		cid++
 
 		// 启动连接
-		go connection.Start()
+		go newConnection.Start()
 	}
 }
 
 func (s *ServerBootstrap) Stop() {
+	// 释放资源
+	// 回收所有的连接
+	s.connManager.Clear()
 
+	log.Infof("tcp server stop successfully at: %s:%d", s.config.Host, s.config.Port)
 }
 
 func (s *ServerBootstrap) verify() error {
@@ -138,4 +153,8 @@ func (s *ServerBootstrap) SetConnOnCloseFunc(f func(conn iface.Connection)) {
 
 func (s *ServerBootstrap) GetConnOnCloseFunc() func(conn iface.Connection) {
 	return s.connOnCloseFunc
+}
+
+func (s *ServerBootstrap) GetConnManager() iface.ConnManager {
+	return s.connManager
 }
