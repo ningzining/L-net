@@ -5,5 +5,4 @@ type Pipeline interface {
 	Handle(msg []byte)
 
 	GetConnection() Connection
-	SetConnection(conn Connection)
 }

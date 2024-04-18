@@ -58,7 +58,3 @@ func (p *Pipeline) firstContext() iface.Context {
 func (p *Pipeline) GetConnection() iface.Connection {
 	return p.connection
 }
-
-func (p *Pipeline) SetConnection(conn iface.Connection) {
-	p.connection = conn
-}
