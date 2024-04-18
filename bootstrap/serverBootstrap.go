@@ -22,7 +22,7 @@ type ServerBootstrap struct {
 	handlers []iface.ConnectionHandler
 
 	connManager iface.ConnManager
-	// todo: 消息分发器
+	// todo: 消息分发器,业务使用goroutine去处理
 
 	connOnActiveFunc func(conn iface.Connection)
 	connOnCloseFunc  func(conn iface.Connection)
