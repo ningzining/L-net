@@ -23,8 +23,10 @@ type Connection struct {
 
 	pipeline iface.Pipeline // 处理器管道
 
-	readBuffer  *bytes.Buffer // 读取缓冲区
-	writeBuffer *bytes.Buffer // 写入缓冲区
+	readBuffer *bytes.Buffer // 读取缓冲区
+
+	exitChan chan struct{} // 退出管道
+	msgChan  chan []byte   // 读写goroutine管道
 
 	onActive func(conn iface.Connection) // 钩子函数，当连接建立的时候调用
 	onClose  func(conn iface.Connection) // 钩子函数，当连接断开的时候调用
@@ -32,18 +34,19 @@ type Connection struct {
 
 func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Connection {
 	c := &Connection{
-		server:      server,
-		conn:        conn,
-		connID:      connID,
-		decoder:     server.GetDecoder(),
-		encoder:     server.GetEncoder(),
-		remoteAddr:  conn.RemoteAddr(),
-		localAddr:   conn.LocalAddr(),
-		onActive:    server.GetConnOnActiveFunc(),
-		onClose:     server.GetConnOnCloseFunc(),
-		pipeline:    nil,
-		readBuffer:  bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
-		writeBuffer: bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
+		server:     server,
+		conn:       conn,
+		connID:     connID,
+		decoder:    server.GetDecoder(),
+		encoder:    server.GetEncoder(),
+		remoteAddr: conn.RemoteAddr(),
+		localAddr:  conn.LocalAddr(),
+		onActive:   server.GetConnOnActiveFunc(),
+		onClose:    server.GetConnOnCloseFunc(),
+		pipeline:   nil,
+		readBuffer: bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
+		msgChan:    make(chan []byte),
+		exitChan:   make(chan struct{}),
 	}
 
 	c.pipeline = pipeline.NewPipeline(c)
@@ -89,6 +92,9 @@ func (c *Connection) StartReader() {
 		}
 	}()
 
+	defer log.Infof("%s: [reader] end", c.RemoteAddr().String())
+	log.Infof("%s: [reader] start", c.RemoteAddr().String())
+
 	for {
 		// 读取数据
 		readBytes := make([]byte, c.server.GetConfig().MaxPackageSize)
@@ -119,7 +125,31 @@ func (c *Connection) StartReader() {
 // StartWriter
 // todo: 实现写入器
 func (c *Connection) StartWriter() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Errorf("%v", err)
+		}
+	}()
+	defer log.Infof("%s: [writer] end", c.RemoteAddr().String())
+	log.Infof("%s: [writer] start", c.RemoteAddr().String())
 
+	for {
+		select {
+		case data := <-c.msgChan:
+			if c.encoder != nil {
+				var err error
+				if data, err = c.encoder.Encode(data); err != nil {
+					return
+				}
+			}
+
+			if _, err := c.conn.Write(data); err != nil {
+				return
+			}
+		case <-c.exitChan:
+			return
+		}
+	}
 }
 
 func (c *Connection) callOnActive() {
@@ -135,21 +165,19 @@ func (c *Connection) callOnClose() {
 }
 
 func (c *Connection) Stop() {
+	// 关闭连接
 	c.conn.Close()
+
+	// 告知退出
+	c.exitChan <- struct{}{}
+
+	// 回收资源
+	close(c.exitChan)
+	close(c.msgChan)
 }
 
 func (c *Connection) Write(msg []byte) error {
-	res := msg
-	if c.encoder != nil {
-		var err error
-		if res, err = c.encoder.Encode(res); err != nil {
-			return err
-		}
-	}
-
-	if _, err := c.conn.Write(res); err != nil {
-		return err
-	}
+	c.msgChan <- msg
 
 	return nil
 }

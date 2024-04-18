@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"errors"
 	"fmt"
 	"net"
 
@@ -88,9 +89,9 @@ func (s *ServerBootstrap) Stop() {
 }
 
 func (s *ServerBootstrap) verify() error {
-	//if s.connectionHandler == nil {
-	//	return errors.NewContext("connectionHandler must be added")
-	//}
+	if len(s.handlers) == 0 {
+		return errors.New("connectionHandler must be added")
+	}
 
 	return nil
 }
