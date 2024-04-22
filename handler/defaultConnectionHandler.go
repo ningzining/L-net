@@ -19,12 +19,12 @@ func (d *DefaultConnectionHandler) PreHandle(ctx iface.Context, msg []byte) {
 
 }
 
-func (d *DefaultConnectionHandler) ConnectionRead(ctx iface.Context, msg []byte) {
-	log.Println(fmt.Sprintf("client-%d: %s", ctx.GetConnection().ConnID(), msg))
-	if err := ctx.GetConnection().Write([]byte(fmt.Sprintf("%d-server1: %s", ctx.GetConnection().ConnID(), msg))); err != nil {
+func (d *DefaultConnectionHandler) ChannelRead(ctx iface.Context, msg []byte) {
+	log.Println(fmt.Sprintf("client-%d: %s", ctx.GetConnection().GetConnID(), msg))
+	if err := ctx.GetConnection().Write([]byte(fmt.Sprintf("%d-server1: %s", ctx.GetConnection().GetConnID(), msg))); err != nil {
 		return
 	}
-	ctx.FireConnectionRead(msg)
+	ctx.FireRead(msg)
 }
 
 func (d *DefaultConnectionHandler) PostHandle(ctx iface.Context, msg []byte) {

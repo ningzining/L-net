@@ -5,15 +5,14 @@ import (
 )
 
 type Connection interface {
-	Conn() net.Conn
-	ConnID() uint32
+	GetConn() net.Conn // 获取连接对象
+	GetConnID() uint32 // 获取连接id
 
-	RemoteAddr() net.Addr
-	LocalAddr() net.Addr
+	RemoteAddr() net.Addr // 获取远程地址
 
-	Start()
-	Stop()
+	Start() // 启动连接，开启读写操作
+	Stop()  // 关闭连接，回收资源
 
-	Pipeline() Pipeline
-	Write(msg []byte) error
+	GetPipeline() Pipeline  // 获取当前连接的管道
+	Write(msg []byte) error // 向当前连接写入数据
 }

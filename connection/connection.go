@@ -9,15 +9,16 @@ import (
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
 	"github.com/ningzining/lazynet/pipeline"
+	"github.com/ningzining/lazynet/request"
 )
 
 type Connection struct {
-	server iface.Server // 隶属于哪个server
-
 	conn       net.Conn
 	connID     uint32
 	remoteAddr net.Addr
 	localAddr  net.Addr
+
+	server iface.Server // 隶属于哪个server
 
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
@@ -51,7 +52,7 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 	}
 
 	c.pipeline = pipeline.NewPipeline(c)
-	for _, handler := range server.GetConnectionHandlers() {
+	for _, handler := range server.GetChannelHandlers() {
 		c.pipeline.AddLast(handler)
 	}
 
@@ -60,20 +61,16 @@ func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Conn
 	return c
 }
 
-func (c *Connection) ConnID() uint32 {
-	return c.connID
+func (c *Connection) GetConn() net.Conn {
+	return c.conn
 }
 
-func (c *Connection) Conn() net.Conn {
-	return c.conn
+func (c *Connection) GetConnID() uint32 {
+	return c.connID
 }
 
 func (c *Connection) RemoteAddr() net.Addr {
 	return c.remoteAddr
-}
-
-func (c *Connection) LocalAddr() net.Addr {
-	return c.localAddr
 }
 
 func (c *Connection) Start() {
@@ -85,6 +82,12 @@ func (c *Connection) Start() {
 	go c.StartReader()
 	// 启动写入器
 	go c.StartWriter()
+}
+
+func (c *Connection) callOnActive() {
+	if c.onActive != nil {
+		c.onActive(c)
+	}
 }
 
 func (c *Connection) StartReader() {
@@ -113,10 +116,12 @@ func (c *Connection) StartReader() {
 			frames := c.decoder.Decode(c.readBuffer)
 			// 读取每一帧的数据并进行处理
 			for _, frame := range frames {
-				go c.server.GetDispatcher().Dispatch(c, frame)
+				req := request.NewRequest(c, frame)
+				go c.server.GetDispatcher().Dispatch(req)
 			}
 		} else {
-			go c.server.GetDispatcher().Dispatch(c, c.readBuffer.Bytes())
+			req := request.NewRequest(c, c.readBuffer.Bytes())
+			go c.server.GetDispatcher().Dispatch(req)
 			c.readBuffer.Reset()
 		}
 	}
@@ -152,18 +157,6 @@ func (c *Connection) StartWriter() {
 	}
 }
 
-func (c *Connection) callOnActive() {
-	if c.onActive != nil {
-		c.onActive(c)
-	}
-}
-
-func (c *Connection) callOnClose() {
-	if c.onClose != nil {
-		c.onClose(c)
-	}
-}
-
 func (c *Connection) Stop() {
 	// 执行连接关闭的钩子函数
 	c.callOnClose()
@@ -182,12 +175,18 @@ func (c *Connection) Stop() {
 	close(c.msgChan)
 }
 
+func (c *Connection) callOnClose() {
+	if c.onClose != nil {
+		c.onClose(c)
+	}
+}
+
+func (c *Connection) GetPipeline() iface.Pipeline {
+	return c.pipeline
+}
+
 func (c *Connection) Write(msg []byte) error {
 	c.msgChan <- msg
 
 	return nil
-}
-
-func (c *Connection) Pipeline() iface.Pipeline {
-	return c.pipeline
 }

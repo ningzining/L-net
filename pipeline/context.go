@@ -32,16 +32,17 @@ func (c *ConnectionContext) GetConnection() iface.Connection {
 	return c.pipeline.GetConnection()
 }
 
-func (c *ConnectionContext) DoHandle(msg []byte) {
-	c.handler.PreHandle(c, msg)
-	c.handler.ConnectionRead(c, msg)
-	c.handler.PostHandle(c, msg)
-}
-
-func (c *ConnectionContext) FireConnectionRead(msg []byte) {
+// FireRead 调用链表当中的下一个处理器
+func (c *ConnectionContext) FireRead(msg []byte) {
 	if c.next == nil || c.next.GetHandler() == nil {
 		return
 	}
 
 	c.next.DoHandle(msg)
+}
+
+func (c *ConnectionContext) DoHandle(msg []byte) {
+	c.handler.PreHandle(c, msg)
+	c.handler.ChannelRead(c, msg)
+	c.handler.PostHandle(c, msg)
 }

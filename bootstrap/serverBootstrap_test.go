@@ -20,9 +20,9 @@ func TestStart1(t *testing.T) {
 	})
 	serverBootstrap.SetDecoder(decoder.NewLineBasedFrameDecoder())
 	serverBootstrap.SetEncoder(encoder.NewLineBasedFrameDecoder())
-	serverBootstrap.AddConnectionHandler(handler.NewDefaultConnectionHandler())
-	//serverBootstrap.AddConnectionHandler(handler.NewDefaultConnectionHandler2())
-	//serverBootstrap.AddConnectionHandler(handler.NewDefaultConnectionHandler3())
+	serverBootstrap.AddChannelHandler(handler.NewDefaultConnectionHandler())
+	//serverBootstrap.AddChannelHandler(handler.NewDefaultConnectionHandler2())
+	//serverBootstrap.AddChannelHandler(handler.NewDefaultConnectionHandler3())
 
 	if err := serverBootstrap.Start(); err != nil {
 		t.Error(err)

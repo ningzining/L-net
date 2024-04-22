@@ -5,7 +5,6 @@ import (
 
 	log "github.com/ningzining/L-log"
 	"github.com/ningzining/lazynet/iface"
-	"github.com/ningzining/lazynet/request"
 )
 
 type Dispatcher struct {
@@ -25,12 +24,12 @@ func NewDispatcher(workerPoolSize int, taskQueueSize int) iface.Dispatcher {
 	}
 }
 
-func (d *Dispatcher) Dispatch(conn iface.Connection, msg []byte) {
+func (d *Dispatcher) Dispatch(req iface.Request) {
 	// 随机分配一个worker
 	workerId := rand.Intn(d.workerPoolSize)
 
 	// 写入工作队列
-	d.taskQueue[workerId] <- request.NewRequest(conn, msg)
+	d.taskQueue[workerId] <- req
 }
 
 func (d *Dispatcher) StartWorkerPool() {
@@ -57,5 +56,5 @@ func (d *Dispatcher) doHandler(workerId int, req iface.Request) {
 		}
 	}()
 
-	req.GetConn().Pipeline().Handle(req.GetMsg())
+	req.GetConn().GetPipeline().Handle(req.GetMsg())
 }

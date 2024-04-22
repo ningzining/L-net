@@ -21,8 +21,8 @@ func NewConnManager() iface.ConnManager {
 func (c *ConnManager) Add(conn iface.Connection) {
 	c.connLock.Lock()
 	defer c.connLock.Unlock()
-	c.connections[conn.ConnID()] = conn
-	log.Infof("connection[%d] add successfully, conn count: %d", conn.ConnID(), c.Size())
+	c.connections[conn.GetConnID()] = conn
+	log.Infof("connection[%d] add successfully, conn count: %d", conn.GetConnID(), c.Size())
 }
 
 func (c *ConnManager) Remove(connId uint32) {

@@ -23,7 +23,7 @@ type ServerBootstrap struct {
 	handlers []iface.ConnectionHandler
 
 	connManager iface.ConnManager
-	// todo: 消息分发器,业务使用goroutine去处理
+	// 消息分发器,业务使用goroutine去处理
 	dispatcher iface.Dispatcher
 
 	connOnActiveFunc func(conn iface.Connection)
@@ -131,11 +131,11 @@ func (s *ServerBootstrap) GetEncoder() encoder.Encoder {
 	return s.encoder
 }
 
-func (s *ServerBootstrap) AddConnectionHandler(handler iface.ConnectionHandler) {
+func (s *ServerBootstrap) AddChannelHandler(handler iface.ConnectionHandler) {
 	s.handlers = append(s.handlers, handler)
 }
 
-func (s *ServerBootstrap) GetConnectionHandlers() []iface.ConnectionHandler {
+func (s *ServerBootstrap) GetChannelHandlers() []iface.ConnectionHandler {
 	return s.handlers
 }
 

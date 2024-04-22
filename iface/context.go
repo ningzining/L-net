@@ -7,9 +7,9 @@ import (
 type Context interface {
 	context.Context
 
-	GetHandler() ConnectionHandler
-	GetConnection() Connection
+	GetHandler() ConnectionHandler // 获取当前的处理器
+	GetConnection() Connection     // 获取连接对象
 
-	DoHandle(msg []byte)
-	FireConnectionRead(msg []byte)
+	DoHandle(msg []byte) // 处理义务逻辑
+	FireRead(msg []byte) // 调用下一个handler处理业务
 }

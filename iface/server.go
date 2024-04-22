@@ -7,26 +7,24 @@ import (
 )
 
 type Server interface {
-	Start() error
-	Stop()
+	Start() error // 启动服务
+	Stop()        // 关闭服务
 
-	GetConfig() *conf.Config
+	GetConfig() *conf.Config // 获取当前服务的配置
 
-	SetDecoder(decoder decoder.Decoder)
-	GetDecoder() decoder.Decoder
+	SetDecoder(decoder decoder.Decoder) // 设置解码器
+	GetDecoder() decoder.Decoder        // 获取解码器
+	SetEncoder(decoder encoder.Encoder) // 设置编码器
+	GetEncoder() encoder.Encoder        // 获取编码器
 
-	SetEncoder(decoder encoder.Encoder)
-	GetEncoder() encoder.Encoder
+	AddChannelHandler(handler ConnectionHandler) // 添加处理器
+	GetChannelHandlers() []ConnectionHandler     // 获取处理器
 
-	AddConnectionHandler(handler ConnectionHandler)
-	GetConnectionHandlers() []ConnectionHandler
+	SetConnOnActiveFunc(func(conn Connection))  // 设置连接激活的回调函数
+	GetConnOnActiveFunc() func(conn Connection) // 获取连接激活的回调函数
+	SetConnOnCloseFunc(func(conn Connection))   // 设置连接关闭的回调函数
+	GetConnOnCloseFunc() func(conn Connection)  // 获取连接关闭的回调函数
 
-	SetConnOnActiveFunc(func(conn Connection))
-	GetConnOnActiveFunc() func(conn Connection)
-
-	SetConnOnCloseFunc(func(conn Connection))
-	GetConnOnCloseFunc() func(conn Connection)
-
-	GetConnManager() ConnManager
-	GetDispatcher() Dispatcher
+	GetConnManager() ConnManager // 获取连接管理器
+	GetDispatcher() Dispatcher   // 获取消息分发器
 }

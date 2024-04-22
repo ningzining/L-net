@@ -19,7 +19,7 @@ func (d *DefaultConnectionHandler3) PreHandle(ctx iface.Context, msg []byte) {
 
 }
 
-func (d *DefaultConnectionHandler3) ConnectionRead(ctx iface.Context, msg []byte) {
+func (d *DefaultConnectionHandler3) ChannelRead(ctx iface.Context, msg []byte) {
 	log.Println(string(msg))
 	if err := ctx.GetConnection().Write([]byte(fmt.Sprintf("server3: %s", msg))); err != nil {
 		return
