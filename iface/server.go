@@ -28,4 +28,5 @@ type Server interface {
 	GetConnOnCloseFunc() func(conn Connection)
 
 	GetConnManager() ConnManager
+	GetDispatcher() Dispatcher
 }

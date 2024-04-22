@@ -14,5 +14,6 @@ type Connection interface {
 	Start()
 	Stop()
 
+	Pipeline() Pipeline
 	Write(msg []byte) error
 }

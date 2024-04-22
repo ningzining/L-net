@@ -113,10 +113,10 @@ func (c *Connection) StartReader() {
 			frames := c.decoder.Decode(c.readBuffer)
 			// 读取每一帧的数据并进行处理
 			for _, frame := range frames {
-				c.pipeline.Handle(frame)
+				go c.server.GetDispatcher().Dispatch(c, frame)
 			}
 		} else {
-			c.pipeline.Handle(c.readBuffer.Bytes())
+			go c.server.GetDispatcher().Dispatch(c, c.readBuffer.Bytes())
 			c.readBuffer.Reset()
 		}
 	}
@@ -186,4 +186,8 @@ func (c *Connection) Write(msg []byte) error {
 	c.msgChan <- msg
 
 	return nil
+}
+
+func (c *Connection) Pipeline() iface.Pipeline {
+	return c.pipeline
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/connection"
 	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/dispatcher"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
 )
@@ -23,6 +24,7 @@ type ServerBootstrap struct {
 
 	connManager iface.ConnManager
 	// todo: 消息分发器,业务使用goroutine去处理
+	dispatcher iface.Dispatcher
 
 	connOnActiveFunc func(conn iface.Connection)
 	connOnCloseFunc  func(conn iface.Connection)
@@ -47,6 +49,7 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 		connOnActiveFunc: nil,
 		connOnCloseFunc:  nil,
 		connManager:      connection.NewConnManager(),
+		dispatcher:       dispatcher.NewDispatcher(config.WorkerPoolSize, config.TaskQueueSize),
 	}
 
 	for _, opt := range opts {
@@ -68,7 +71,7 @@ func (s *ServerBootstrap) Start() error {
 	defer listener.Close()
 
 	log.Infof("tcp server listen at: %s", listener.Addr().String())
-
+	s.dispatcher.StartWorkerPool()
 	var cid uint32
 	for {
 		conn, err := listener.Accept()
@@ -154,4 +157,8 @@ func (s *ServerBootstrap) GetConnOnCloseFunc() func(conn iface.Connection) {
 
 func (s *ServerBootstrap) GetConnManager() iface.ConnManager {
 	return s.connManager
+}
+
+func (s *ServerBootstrap) GetDispatcher() iface.Dispatcher {
+	return s.dispatcher
 }
