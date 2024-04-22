@@ -13,7 +13,7 @@ import (
 	"github.com/ningzining/lazynet/server"
 )
 
-type ServerBootstrap struct {
+type Server struct {
 	config *conf.Config
 
 	decoder decoder.Decoder // 解码器
@@ -29,19 +29,19 @@ type ServerBootstrap struct {
 	connOnCloseFunc  func(conn iface.Connection)
 }
 
-// NewServerBootstrap 创建默认服务
-func NewServerBootstrap(opts ...Option) iface.Server {
+// NewServer 创建默认服务
+func NewServer(opts ...Option) iface.Server {
 	return newServerWithConfig(conf.DefaultConfig(), opts...)
 }
 
-// NewServerBootstrapWithConfig 自定义配置创建服务
-func NewServerBootstrapWithConfig(config *conf.Config, opts ...Option) iface.Server {
+// NewServerWithConfig 自定义配置创建服务
+func NewServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	return newServerWithConfig(config, opts...)
 }
 
 // 使用配置创建服务
 func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
-	s := &ServerBootstrap{
+	s := &Server{
 		config:           config,
 		decoder:          nil,
 		handlers:         make([]iface.ChannelHandler, 0),
@@ -58,7 +58,7 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	return s
 }
 
-func (s *ServerBootstrap) Start() error {
+func (s *Server) Start() error {
 	if err := s.verify(); err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (s *ServerBootstrap) Start() error {
 	}
 }
 
-func (s *ServerBootstrap) Stop() {
+func (s *Server) Stop() {
 	// 释放资源
 	// 回收所有的连接
 	s.connManager.Clear()
@@ -102,7 +102,7 @@ func (s *ServerBootstrap) Stop() {
 	log.Infof("tcp server stop successfully at: %s:%d", s.config.Host, s.config.Port)
 }
 
-func (s *ServerBootstrap) verify() error {
+func (s *Server) verify() error {
 	if len(s.handlers) == 0 {
 		return errors.New("connectionHandler must be added")
 	}
@@ -110,54 +110,54 @@ func (s *ServerBootstrap) verify() error {
 	return nil
 }
 
-func (s *ServerBootstrap) GetConfig() *conf.Config {
+func (s *Server) GetConfig() *conf.Config {
 	return s.config
 }
 
-func (s *ServerBootstrap) SetDecoder(decoder decoder.Decoder) {
+func (s *Server) SetDecoder(decoder decoder.Decoder) {
 	s.decoder = decoder
 }
 
-func (s *ServerBootstrap) GetDecoder() decoder.Decoder {
+func (s *Server) GetDecoder() decoder.Decoder {
 	return s.decoder
 }
 
-func (s *ServerBootstrap) SetEncoder(encoder encoder.Encoder) {
+func (s *Server) SetEncoder(encoder encoder.Encoder) {
 	s.encoder = encoder
 }
 
-func (s *ServerBootstrap) GetEncoder() encoder.Encoder {
+func (s *Server) GetEncoder() encoder.Encoder {
 	return s.encoder
 }
 
-func (s *ServerBootstrap) AddChannelHandler(handler iface.ChannelHandler) {
+func (s *Server) AddChannelHandler(handler iface.ChannelHandler) {
 	s.handlers = append(s.handlers, handler)
 }
 
-func (s *ServerBootstrap) GetChannelHandlers() []iface.ChannelHandler {
+func (s *Server) GetChannelHandlers() []iface.ChannelHandler {
 	return s.handlers
 }
 
-func (s *ServerBootstrap) SetConnOnActiveFunc(f func(conn iface.Connection)) {
+func (s *Server) SetConnOnActiveFunc(f func(conn iface.Connection)) {
 	s.connOnActiveFunc = f
 }
 
-func (s *ServerBootstrap) GetConnOnActiveFunc() func(conn iface.Connection) {
+func (s *Server) GetConnOnActiveFunc() func(conn iface.Connection) {
 	return s.connOnActiveFunc
 }
 
-func (s *ServerBootstrap) SetConnOnCloseFunc(f func(conn iface.Connection)) {
+func (s *Server) SetConnOnCloseFunc(f func(conn iface.Connection)) {
 	s.connOnCloseFunc = f
 }
 
-func (s *ServerBootstrap) GetConnOnCloseFunc() func(conn iface.Connection) {
+func (s *Server) GetConnOnCloseFunc() func(conn iface.Connection) {
 	return s.connOnCloseFunc
 }
 
-func (s *ServerBootstrap) GetConnManager() iface.ConnManager {
+func (s *Server) GetConnManager() iface.ConnManager {
 	return s.connManager
 }
 
-func (s *ServerBootstrap) GetDispatcher() iface.Dispatcher {
+func (s *Server) GetDispatcher() iface.Dispatcher {
 	return s.dispatcher
 }

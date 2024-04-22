@@ -7,31 +7,31 @@ import (
 	"net"
 )
 
-type ClientBootstrap struct {
+type Client struct {
 	addr        string
 	conn        net.Conn
 	encoder     encoder.Encoder
 	handlerList []iface.ChannelHandler2
 }
 
-func NewClientBootstrap(addr string) *ClientBootstrap {
-	return &ClientBootstrap{
+func NewClient(addr string) *Client {
+	return &Client{
 		addr: addr,
 	}
 }
 
 // SetEncoder 设置编码器
-func (c *ClientBootstrap) SetEncoder(encoder encoder.Encoder) {
+func (c *Client) SetEncoder(encoder encoder.Encoder) {
 	c.encoder = encoder
 }
 
 // GetEncoder 获取编码器
-func (c *ClientBootstrap) GetEncoder() encoder.Encoder {
+func (c *Client) GetEncoder() encoder.Encoder {
 	return c.encoder
 }
 
 // Start 启动客户端
-func (c *ClientBootstrap) Start() error {
+func (c *Client) Start() error {
 	conn, err := net.Dial("tcp", c.addr)
 	if err != nil {
 		return err
@@ -40,11 +40,11 @@ func (c *ClientBootstrap) Start() error {
 	return nil
 }
 
-func (c *ClientBootstrap) Stop() {
+func (c *Client) Stop() {
 	c.conn.Close()
 }
 
-func (c *ClientBootstrap) Read() ([]byte, error) {
+func (c *Client) Read() ([]byte, error) {
 	bytes := make([]byte, 1024)
 	n, err := c.conn.Read(bytes)
 	if err != nil {
@@ -55,7 +55,7 @@ func (c *ClientBootstrap) Read() ([]byte, error) {
 }
 
 // 往连接中写入字节数组
-func (c *ClientBootstrap) Write(source []byte) error {
+func (c *Client) Write(source []byte) error {
 	frame := source
 
 	// 如果编码器不为nil，则对数据进行编码后写入

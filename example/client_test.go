@@ -1,16 +1,17 @@
-package bootstrap
+package example
 
 import (
 	"bytes"
 	"testing"
 	"time"
 
+	"github.com/ningzining/lazynet/bootstrap"
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 )
 
-func TestStartClientBootstrap1(t *testing.T) {
-	clientBootstrap := NewClientBootstrap("127.0.0.1:8999")
+func TestStartClient1(t *testing.T) {
+	clientBootstrap := bootstrap.NewClient("127.0.0.1:8999")
 	clientBootstrap.SetEncoder(encoder.NewDelimiterBasedFrameDecoder('\n'))
 	if err := clientBootstrap.Start(); err != nil {
 		t.Error(err)
@@ -43,8 +44,8 @@ func TestStartClientBootstrap1(t *testing.T) {
 
 }
 
-func TestStartClientBootstrap2(t *testing.T) {
-	clientBootstrap := NewClientBootstrap("127.0.0.1:8999")
+func TestStartClient2(t *testing.T) {
+	clientBootstrap := bootstrap.NewClient("127.0.0.1:8999")
 	clientBootstrap.SetEncoder(encoder.NewDelimiterBasedFrameDecoder('\n'))
 
 	if err := clientBootstrap.Start(); err != nil {
