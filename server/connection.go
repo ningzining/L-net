@@ -1,4 +1,4 @@
-package connection
+package server
 
 import (
 	"bytes"
@@ -8,8 +8,6 @@ import (
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
-	"github.com/ningzining/lazynet/pipeline"
-	"github.com/ningzining/lazynet/request"
 )
 
 type Connection struct {
@@ -34,25 +32,25 @@ type Connection struct {
 	onClose  func(conn iface.Connection) // 钩子函数，当连接断开的时候调用
 }
 
-func NewConnection(server iface.Server, conn net.Conn, connID uint32) iface.Connection {
+func NewConnection(s iface.Server, conn net.Conn, connID uint32) iface.Connection {
 	c := &Connection{
-		server:     server,
+		server:     s,
 		conn:       conn,
 		connID:     connID,
-		decoder:    server.GetDecoder(),
-		encoder:    server.GetEncoder(),
+		decoder:    s.GetDecoder(),
+		encoder:    s.GetEncoder(),
 		remoteAddr: conn.RemoteAddr(),
 		localAddr:  conn.LocalAddr(),
-		onActive:   server.GetConnOnActiveFunc(),
-		onClose:    server.GetConnOnCloseFunc(),
+		onActive:   s.GetConnOnActiveFunc(),
+		onClose:    s.GetConnOnCloseFunc(),
 		pipeline:   nil,
-		readBuffer: bytes.NewBuffer(make([]byte, 0, server.GetConfig().MaxPackageSize*4)),
+		readBuffer: bytes.NewBuffer(make([]byte, 0, s.GetConfig().MaxPackageSize*4)),
 		msgChan:    make(chan []byte),
 		exitChan:   make(chan struct{}),
 	}
 
-	c.pipeline = pipeline.NewPipeline(c)
-	for _, handler := range server.GetChannelHandlers() {
+	c.pipeline = NewPipeline(c)
+	for _, handler := range s.GetChannelHandlers() {
 		c.pipeline.AddLast(handler)
 	}
 
@@ -116,12 +114,17 @@ func (c *Connection) StartReader() {
 			frames := c.decoder.Decode(c.readBuffer)
 			// 读取每一帧的数据并进行处理
 			for _, frame := range frames {
-				req := request.NewRequest(c, frame)
+				// 创建一个请求体
+				req := NewRequest(c, frame)
+				// 使用消息分发器分发消息，异步处理请求
 				go c.server.GetDispatcher().Dispatch(req)
 			}
 		} else {
-			req := request.NewRequest(c, c.readBuffer.Bytes())
+			// 创建一个请求体
+			req := NewRequest(c, c.readBuffer.Bytes())
+			// 使用消息分发器分发消息，异步处理请求
 			go c.server.GetDispatcher().Dispatch(req)
+			// 处理完消息，重置缓冲区
 			c.readBuffer.Reset()
 		}
 	}
@@ -138,9 +141,11 @@ func (c *Connection) StartWriter() {
 	defer log.Infof("%s: [writer] end", c.RemoteAddr().String())
 	log.Infof("%s: [writer] start", c.RemoteAddr().String())
 
+	// 等待监听写入的消息
 	for {
 		select {
 		case data := <-c.msgChan:
+			// 使用编码器对返回的数据进行编码
 			if c.encoder != nil {
 				var err error
 				if data, err = c.encoder.Encode(data); err != nil {
@@ -148,6 +153,7 @@ func (c *Connection) StartWriter() {
 				}
 			}
 
+			// 向客户端写入数据
 			if _, err := c.conn.Write(data); err != nil {
 				return
 			}

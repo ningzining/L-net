@@ -11,7 +11,7 @@ type ClientBootstrap struct {
 	addr        string
 	conn        net.Conn
 	encoder     encoder.Encoder
-	handlerList []iface.ChannelHandler
+	handlerList []iface.ChannelHandler2
 }
 
 func NewClientBootstrap(addr string) *ClientBootstrap {

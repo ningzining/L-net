@@ -1,4 +1,4 @@
-package request
+package server
 
 import (
 	"github.com/ningzining/lazynet/iface"

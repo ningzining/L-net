@@ -7,11 +7,10 @@ import (
 
 	log "github.com/ningzining/L-log"
 	"github.com/ningzining/lazynet/conf"
-	"github.com/ningzining/lazynet/connection"
 	"github.com/ningzining/lazynet/decoder"
-	"github.com/ningzining/lazynet/dispatcher"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
+	"github.com/ningzining/lazynet/server"
 )
 
 type ServerBootstrap struct {
@@ -20,7 +19,7 @@ type ServerBootstrap struct {
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
 
-	handlers []iface.ConnectionHandler
+	handlers []iface.ChannelHandler
 
 	connManager iface.ConnManager
 	// 消息分发器,业务使用goroutine去处理
@@ -45,11 +44,11 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 	s := &ServerBootstrap{
 		config:           config,
 		decoder:          nil,
-		handlers:         make([]iface.ConnectionHandler, 0),
+		handlers:         make([]iface.ChannelHandler, 0),
 		connOnActiveFunc: nil,
 		connOnCloseFunc:  nil,
-		connManager:      connection.NewConnManager(),
-		dispatcher:       dispatcher.NewDispatcher(config.WorkerPoolSize, config.TaskQueueSize),
+		connManager:      server.NewConnManager(),
+		dispatcher:       server.NewDispatcher(config.WorkerPoolSize, config.TaskQueueSize),
 	}
 
 	for _, opt := range opts {
@@ -87,7 +86,7 @@ func (s *ServerBootstrap) Start() error {
 		}
 
 		// 创建连接
-		newConnection := connection.NewConnection(s, conn, cid)
+		newConnection := server.NewConnection(s, conn, cid)
 		cid++
 
 		// 启动连接
@@ -131,11 +130,11 @@ func (s *ServerBootstrap) GetEncoder() encoder.Encoder {
 	return s.encoder
 }
 
-func (s *ServerBootstrap) AddChannelHandler(handler iface.ConnectionHandler) {
+func (s *ServerBootstrap) AddChannelHandler(handler iface.ChannelHandler) {
 	s.handlers = append(s.handlers, handler)
 }
 
-func (s *ServerBootstrap) GetChannelHandlers() []iface.ConnectionHandler {
+func (s *ServerBootstrap) GetChannelHandlers() []iface.ChannelHandler {
 	return s.handlers
 }
 

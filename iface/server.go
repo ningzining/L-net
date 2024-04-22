@@ -17,8 +17,8 @@ type Server interface {
 	SetEncoder(decoder encoder.Encoder) // 设置编码器
 	GetEncoder() encoder.Encoder        // 获取编码器
 
-	AddChannelHandler(handler ConnectionHandler) // 添加处理器
-	GetChannelHandlers() []ConnectionHandler     // 获取处理器
+	AddChannelHandler(handler ChannelHandler) // 添加处理器
+	GetChannelHandlers() []ChannelHandler     // 获取处理器
 
 	SetConnOnActiveFunc(func(conn Connection))  // 设置连接激活的回调函数
 	GetConnOnActiveFunc() func(conn Connection) // 获取连接激活的回调函数

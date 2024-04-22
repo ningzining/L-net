@@ -1,4 +1,4 @@
-package pipeline
+package server
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 )
 
 type Pipeline struct {
-	head *ConnectionContext
-	tail *ConnectionContext
+	head *ChannelContext
+	tail *ChannelContext
 
 	connection iface.Connection
 }
@@ -29,7 +29,7 @@ func NewPipeline(conn iface.Connection) iface.Pipeline {
 	return p
 }
 
-func (p *Pipeline) AddLast(handler iface.ConnectionHandler) {
+func (p *Pipeline) AddLast(handler iface.ChannelHandler) {
 	ctx := NewContext(context.Background(), p, handler)
 	prev := p.tail.prev
 	ctx.prev = prev
@@ -44,6 +44,7 @@ func (p *Pipeline) Handle(msg []byte) {
 	ctx.DoHandle(msg)
 }
 
+// 获取第一个不为空的消息处理器
 func (p *Pipeline) firstContext() iface.Context {
 	node := p.head
 	for {

@@ -1,4 +1,4 @@
-package dispatcher
+package server
 
 import (
 	"math/rand"
@@ -8,12 +8,9 @@ import (
 )
 
 type Dispatcher struct {
-	// 工作池大小
-	workerPoolSize int
-	// 任务队列长度
-	taskQueueSize int
-	// 任务列表
-	taskQueue []chan iface.Request
+	workerPoolSize int                  // 工作池大小
+	taskQueueSize  int                  // 任务队列长度
+	taskQueue      []chan iface.Request // 任务列表
 }
 
 func NewDispatcher(workerPoolSize int, taskQueueSize int) iface.Dispatcher {
@@ -56,5 +53,6 @@ func (d *Dispatcher) doHandler(workerId int, req iface.Request) {
 		}
 	}()
 
+	// 获取请求的连接管道，并处理请求消息
 	req.GetConn().GetPipeline().Handle(req.GetMsg())
 }

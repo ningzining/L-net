@@ -11,7 +11,7 @@ import (
 )
 
 func TestStart1(t *testing.T) {
-	serverBootstrap := NewServerBootstrap(WithPort(8999))
+	serverBootstrap := NewServerBootstrap(WithServerPort(8999))
 	serverBootstrap.SetConnOnActiveFunc(func(conn iface.Connection) {
 		log.Printf("remoteAddr: %s, connection on active", conn.RemoteAddr())
 	})
@@ -20,9 +20,7 @@ func TestStart1(t *testing.T) {
 	})
 	serverBootstrap.SetDecoder(decoder.NewLineBasedFrameDecoder())
 	serverBootstrap.SetEncoder(encoder.NewLineBasedFrameDecoder())
-	serverBootstrap.AddChannelHandler(handler.NewDefaultConnectionHandler())
-	//serverBootstrap.AddChannelHandler(handler.NewDefaultConnectionHandler2())
-	//serverBootstrap.AddChannelHandler(handler.NewDefaultConnectionHandler3())
+	serverBootstrap.AddChannelHandler(handler.NewDefaultChannelHandler())
 
 	if err := serverBootstrap.Start(); err != nil {
 		t.Error(err)
@@ -31,7 +29,7 @@ func TestStart1(t *testing.T) {
 }
 
 func TestStart2(t *testing.T) {
-	serverBootstrap := NewServerBootstrap(WithPort(8999))
+	serverBootstrap := NewServerBootstrap(WithServerPort(8999))
 	serverBootstrap.SetConnOnActiveFunc(func(conn iface.Connection) {
 		log.Printf("remoteAddr: %s, connection on active", conn.RemoteAddr())
 	})
