@@ -1,22 +1,40 @@
 package bootstrap
 
 import (
-	"github.com/ningzining/lazynet/encoder"
-	"github.com/ningzining/lazynet/iface"
+	"bytes"
 
 	"net"
+
+	"github.com/ningzining/lazynet/client"
+	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/encoder"
+	"github.com/ningzining/lazynet/iface"
+	"github.com/ningzining/lazynet/server"
 )
 
 type Client struct {
-	addr        string
-	conn        net.Conn
-	encoder     encoder.Encoder
-	handlerList []iface.ChannelHandler2
+	addr string           // 地址
+	conn iface.Connection // 连接对象
+
+	encoder encoder.Encoder // 编码器
+	decoder decoder.Decoder // 解码器
+
+	readBuffer *bytes.Buffer // 读取缓冲区
+
+	handlerList []iface.ChannelHandler
+	pipeline    iface.Pipeline
+
+	dispatcher iface.Dispatcher // 消息分发器,业务使用goroutine去处理
+
+	connOnActiveFunc func(conn iface.Connection)
+	connOnCloseFunc  func(conn iface.Connection)
 }
 
 func NewClient(addr string) *Client {
 	return &Client{
-		addr: addr,
+		addr:       addr,
+		readBuffer: bytes.NewBuffer(make([]byte, 0, 1024)),
+		dispatcher: server.NewDispatcher(4, 1024),
 	}
 }
 
@@ -30,46 +48,62 @@ func (c *Client) GetEncoder() encoder.Encoder {
 	return c.encoder
 }
 
+// SetDecoder 设置解码器
+func (c *Client) SetDecoder(decoder decoder.Decoder) {
+	c.decoder = decoder
+}
+
+// GetDecoder 获取解码器
+func (c *Client) GetDecoder() decoder.Decoder {
+	return c.decoder
+}
+
 // Start 启动客户端
 func (c *Client) Start() error {
 	conn, err := net.Dial("tcp", c.addr)
 	if err != nil {
 		return err
 	}
-	c.conn = conn
+	c.dispatcher.StartWorkerPool()
+	connection := client.NewConnection(c, conn)
+	c.conn = connection
+	connection.Start()
 	return nil
 }
 
 func (c *Client) Stop() {
-	c.conn.Close()
-}
-
-func (c *Client) Read() ([]byte, error) {
-	bytes := make([]byte, 1024)
-	n, err := c.conn.Read(bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes[:n], nil
+	c.conn.Stop()
 }
 
 // 往连接中写入字节数组
 func (c *Client) Write(source []byte) error {
-	frame := source
+	return c.conn.Write(source)
+}
 
-	// 如果编码器不为nil，则对数据进行编码后写入
-	var err error
-	if c.encoder != nil {
-		frame, err = c.encoder.Encode(frame)
-		if err != nil {
-			return err
-		}
-	}
+func (c *Client) AddChannelHandler(handler iface.ChannelHandler) {
+	c.handlerList = append(c.handlerList, handler)
+}
 
-	if _, err := c.conn.Write(frame); err != nil {
-		return err
-	}
+func (c *Client) GetChannelHandlers() []iface.ChannelHandler {
+	return c.handlerList
+}
 
-	return nil
+func (c *Client) GetDispatcher() iface.Dispatcher {
+	return c.dispatcher
+}
+
+func (c *Client) SetConnOnActiveFunc(f func(conn iface.Connection)) {
+	c.connOnActiveFunc = f
+}
+
+func (c *Client) GetConnOnActiveFunc() func(conn iface.Connection) {
+	return c.connOnActiveFunc
+}
+
+func (c *Client) SetConnOnCloseFunc(f func(conn iface.Connection)) {
+	c.connOnCloseFunc = f
+}
+
+func (c *Client) GetConnOnCloseFunc() func(conn iface.Connection) {
+	return c.connOnCloseFunc
 }

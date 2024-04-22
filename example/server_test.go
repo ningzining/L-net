@@ -7,7 +7,6 @@ import (
 	"github.com/ningzining/lazynet/bootstrap"
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
-	"github.com/ningzining/lazynet/handler"
 	"github.com/ningzining/lazynet/iface"
 )
 
@@ -21,7 +20,7 @@ func TestStart1(t *testing.T) {
 	})
 	serverBootstrap.SetDecoder(decoder.NewLineBasedFrameDecoder())
 	serverBootstrap.SetEncoder(encoder.NewLineBasedFrameDecoder())
-	serverBootstrap.AddChannelHandler(handler.NewDefaultChannelHandler())
+	serverBootstrap.AddChannelHandler(NewDefaultServerChannelHandler())
 
 	if err := serverBootstrap.Start(); err != nil {
 		t.Error(err)

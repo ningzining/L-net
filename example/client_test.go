@@ -1,7 +1,6 @@
 package example
 
 import (
-	"bytes"
 	"testing"
 	"time"
 
@@ -12,26 +11,14 @@ import (
 
 func TestStartClient1(t *testing.T) {
 	clientBootstrap := bootstrap.NewClient("127.0.0.1:8999")
-	clientBootstrap.SetEncoder(encoder.NewDelimiterBasedFrameDecoder('\n'))
+	clientBootstrap.SetEncoder(encoder.NewLineBasedFrameDecoder())
+	clientBootstrap.SetDecoder(decoder.NewLineBasedFrameDecoder())
+	clientBootstrap.AddChannelHandler(NewDefaultClientChannelHandler())
+
 	if err := clientBootstrap.Start(); err != nil {
 		t.Error(err)
 		return
 	}
-
-	go func() {
-		for {
-			data, err := clientBootstrap.Read()
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			frameDecoder := decoder.NewLineBasedFrameDecoder()
-			decode := frameDecoder.Decode(bytes.NewBuffer(data))
-			for _, frame := range decode {
-				t.Log(string(frame))
-			}
-		}
-	}()
 
 	// 每次发送一个数据包
 	for {
