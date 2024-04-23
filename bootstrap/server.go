@@ -9,7 +9,6 @@ import (
 	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/connection"
 	"github.com/ningzining/lazynet/iface"
-	"github.com/ningzining/lazynet/server"
 )
 
 type Server struct {
@@ -38,7 +37,7 @@ func newServerWithConfig(config *conf.ServerConfig, opts ...conf.ServerOption) i
 	s := &Server{
 		Bootstrap:   NewBootstrap(config.WorkerPoolSize, config.TaskQueueSize),
 		config:      config,
-		connManager: server.NewConnManager(),
+		connManager: connection.NewConnManager(),
 	}
 
 	return s

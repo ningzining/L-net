@@ -2,9 +2,9 @@ package bootstrap
 
 import (
 	"github.com/ningzining/lazynet/decoder"
+	"github.com/ningzining/lazynet/dispatcher"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
-	"github.com/ningzining/lazynet/server"
 )
 
 type Bootstrap struct {
@@ -26,7 +26,7 @@ func NewBootstrap(workerPoolSize int, taskQueueSize int) Bootstrap {
 		connOnActiveFunc: nil,
 		connOnCloseFunc:  nil,
 		handlers:         nil,
-		dispatcher:       server.NewDispatcher(workerPoolSize, taskQueueSize),
+		dispatcher:       dispatcher.NewDispatcher(workerPoolSize, taskQueueSize),
 	}
 }
 

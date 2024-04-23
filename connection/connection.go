@@ -8,7 +8,6 @@ import (
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
-	"github.com/ningzining/lazynet/server"
 )
 
 type Connection struct {
@@ -49,7 +48,7 @@ func New(bootstrap iface.Bootstrap, conn net.Conn, connId uint32, maxPackageSize
 		onActive:   nil,
 		onClose:    nil,
 	}
-	pipeline := server.NewPipeline(c)
+	pipeline := NewPipeline(c)
 	c.pipeline = pipeline
 
 	for _, handler := range bootstrap.GetChannelHandlers() {
@@ -113,13 +112,13 @@ func (c *Connection) StartReader() {
 			// 读取每一帧的数据并进行处理
 			for _, frame := range frames {
 				// 创建一个请求体
-				req := server.NewRequest(c, frame)
+				req := NewRequest(c, frame)
 				// 使用消息分发器分发消息，异步处理请求
 				go c.bootstrap.GetDispatcher().Dispatch(req)
 			}
 		} else {
 			// 创建一个请求体
-			req := server.NewRequest(c, c.readBuffer.Bytes())
+			req := NewRequest(c, c.readBuffer.Bytes())
 			// 使用消息分发器分发消息，异步处理请求
 			go c.bootstrap.GetDispatcher().Dispatch(req)
 			// 处理完消息，重置缓冲区
