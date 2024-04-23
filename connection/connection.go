@@ -1,4 +1,4 @@
-package server
+package connection
 
 import (
 	"bytes"
@@ -8,15 +8,16 @@ import (
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
+	"github.com/ningzining/lazynet/server"
 )
 
 type Connection struct {
+	bootstrap iface.Bootstrap
+
 	conn       net.Conn
-	connID     uint32
+	connId     uint32
 	remoteAddr net.Addr
 	localAddr  net.Addr
-
-	server iface.Server // 隶属于哪个server
 
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
@@ -32,29 +33,28 @@ type Connection struct {
 	onClose  func(conn iface.Connection) // 钩子函数，当连接断开的时候调用
 }
 
-func NewConnection(s iface.Server, conn net.Conn, connID uint32) iface.Connection {
+func New(bootstrap iface.Bootstrap, conn net.Conn, connId uint32, maxPackageSize int) iface.Connection {
 	c := &Connection{
-		server:     s,
+		bootstrap:  bootstrap,
 		conn:       conn,
-		connID:     connID,
-		decoder:    s.GetDecoder(),
-		encoder:    s.GetEncoder(),
+		connId:     connId,
 		remoteAddr: conn.RemoteAddr(),
 		localAddr:  conn.LocalAddr(),
-		onActive:   s.GetConnOnActiveFunc(),
-		onClose:    s.GetConnOnCloseFunc(),
+		decoder:    bootstrap.GetDecoder(),
+		encoder:    bootstrap.GetEncoder(),
 		pipeline:   nil,
-		readBuffer: bytes.NewBuffer(make([]byte, 0, s.GetConfig().MaxPackageSize*4)),
+		readBuffer: bytes.NewBuffer(make([]byte, 0, maxPackageSize*2)), // 缓冲区大小为最大包大小的两倍，确保能解析出来一个包
 		msgChan:    make(chan []byte),
 		exitChan:   make(chan struct{}),
+		onActive:   nil,
+		onClose:    nil,
 	}
+	pipeline := server.NewPipeline(c)
+	c.pipeline = pipeline
 
-	c.pipeline = NewPipeline(c)
-	for _, handler := range s.GetChannelHandlers() {
+	for _, handler := range bootstrap.GetChannelHandlers() {
 		c.pipeline.AddLast(handler)
 	}
-
-	c.server.GetConnManager().Add(c)
 
 	return c
 }
@@ -64,7 +64,7 @@ func (c *Connection) GetConn() net.Conn {
 }
 
 func (c *Connection) GetConnID() uint32 {
-	return c.connID
+	return c.connId
 }
 
 func (c *Connection) RemoteAddr() net.Addr {
@@ -75,8 +75,6 @@ func (c *Connection) Start() {
 	// 执行连接建立的钩子函数
 	c.callOnActive()
 
-	// 全双工通信，可以接收数据也可以写入数据
-	// 启动阅读器
 	go c.StartReader()
 	// 启动写入器
 	go c.StartWriter()
@@ -101,7 +99,7 @@ func (c *Connection) StartReader() {
 
 	for {
 		// 读取数据
-		readBytes := make([]byte, c.server.GetConfig().MaxPackageSize)
+		readBytes := make([]byte, 1024)
 		n, err := c.conn.Read(readBytes)
 		if err != nil {
 			break
@@ -115,15 +113,15 @@ func (c *Connection) StartReader() {
 			// 读取每一帧的数据并进行处理
 			for _, frame := range frames {
 				// 创建一个请求体
-				req := NewRequest(c, frame)
+				req := server.NewRequest(c, frame)
 				// 使用消息分发器分发消息，异步处理请求
-				go c.server.GetDispatcher().Dispatch(req)
+				go c.bootstrap.GetDispatcher().Dispatch(req)
 			}
 		} else {
 			// 创建一个请求体
-			req := NewRequest(c, c.readBuffer.Bytes())
+			req := server.NewRequest(c, c.readBuffer.Bytes())
 			// 使用消息分发器分发消息，异步处理请求
-			go c.server.GetDispatcher().Dispatch(req)
+			go c.bootstrap.GetDispatcher().Dispatch(req)
 			// 处理完消息，重置缓冲区
 			c.readBuffer.Reset()
 		}
@@ -173,9 +171,6 @@ func (c *Connection) Stop() {
 	// 告知退出
 	c.exitChan <- struct{}{}
 
-	// 将当前连接从管理器移除
-	c.server.GetConnManager().Remove(c.connID)
-
 	// 回收资源
 	close(c.exitChan)
 	close(c.msgChan)
@@ -192,7 +187,20 @@ func (c *Connection) GetPipeline() iface.Pipeline {
 }
 
 func (c *Connection) Write(msg []byte) error {
-	c.msgChan <- msg
+	frame := msg
+
+	// 如果编码器不为nil，则对数据进行编码后写入
+	var err error
+	if c.encoder != nil {
+		frame, err = c.encoder.Encode(frame)
+		if err != nil {
+			return err
+		}
+	}
+
+	if _, err := c.conn.Write(frame); err != nil {
+		return err
+	}
 
 	return nil
 }
