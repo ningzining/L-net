@@ -2,6 +2,8 @@ package iface
 
 import (
 	"net"
+
+	"github.com/robfig/cron/v3"
 )
 
 type Connection interface {
@@ -15,4 +17,7 @@ type Connection interface {
 
 	GetPipeline() Pipeline  // 获取当前连接的管道
 	Write(msg []byte) error // 向当前连接写入数据
+
+	AddCronFunc(spec string, cmd func()) error
+	RemoveCronFunc(id cron.EntryID)
 }

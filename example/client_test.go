@@ -3,7 +3,6 @@ package example
 import (
 	"log"
 	"testing"
-	"time"
 
 	"github.com/ningzining/lazynet/bootstrap"
 	"github.com/ningzining/lazynet/conf"
@@ -21,14 +20,15 @@ func TestStartClient1(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	for true {
+	clientBootstrap.GetConn().AddCronFunc("@every 1s", func() {
 		// 每次发送一个数据包
-		if err := clientBootstrap.GetConn().Write([]byte("hello world2")); err != nil {
+		if err := clientBootstrap.GetConn().Write([]byte("hello world")); err != nil {
 			log.Println(err)
 			return
 		}
-		time.Sleep(time.Second * 1)
-	}
+	})
+
+	select {}
 }
 
 func TestStartClient2(t *testing.T) {

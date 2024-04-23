@@ -8,10 +8,15 @@ import (
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
+	"github.com/robfig/cron/v3"
 )
 
 type Connection struct {
 	bootstrap iface.Bootstrap
+
+	// todo: 优化拆分出来，组合上去
+	cron        *cron.Cron
+	cronManager map[cron.EntryID]struct{}
 
 	conn       net.Conn
 	connId     uint32
@@ -34,19 +39,21 @@ type Connection struct {
 
 func New(bootstrap iface.Bootstrap, conn net.Conn, connId uint32, maxPackageSize int) iface.Connection {
 	c := &Connection{
-		bootstrap:  bootstrap,
-		conn:       conn,
-		connId:     connId,
-		remoteAddr: conn.RemoteAddr(),
-		localAddr:  conn.LocalAddr(),
-		decoder:    bootstrap.GetDecoder(),
-		encoder:    bootstrap.GetEncoder(),
-		pipeline:   nil,
-		readBuffer: bytes.NewBuffer(make([]byte, 0, maxPackageSize*2)), // 缓冲区大小为最大包大小的两倍，确保能解析出来一个包
-		msgChan:    make(chan []byte),
-		exitChan:   make(chan struct{}),
-		onActive:   nil,
-		onClose:    nil,
+		bootstrap:   bootstrap,
+		cron:        cron.New(cron.WithSeconds()),
+		cronManager: make(map[cron.EntryID]struct{}),
+		conn:        conn,
+		connId:      connId,
+		remoteAddr:  conn.RemoteAddr(),
+		localAddr:   conn.LocalAddr(),
+		decoder:     bootstrap.GetDecoder(),
+		encoder:     bootstrap.GetEncoder(),
+		pipeline:    nil,
+		readBuffer:  bytes.NewBuffer(make([]byte, 0, maxPackageSize*2)), // 缓冲区大小为最大包大小的两倍，确保能解析出来一个包
+		msgChan:     make(chan []byte),
+		exitChan:    make(chan struct{}),
+		onActive:    nil,
+		onClose:     nil,
 	}
 	pipeline := NewPipeline(c)
 	c.pipeline = pipeline
@@ -54,6 +61,8 @@ func New(bootstrap iface.Bootstrap, conn net.Conn, connId uint32, maxPackageSize
 	for _, handler := range bootstrap.GetChannelHandlers() {
 		c.pipeline.AddLast(handler)
 	}
+
+	c.cron.Start()
 
 	return c
 }
@@ -202,4 +211,18 @@ func (c *Connection) Write(msg []byte) error {
 	}
 
 	return nil
+}
+
+func (c *Connection) AddCronFunc(spec string, cmd func()) error {
+	entryID, err := c.cron.AddFunc(spec, cmd)
+	if err != nil {
+		return err
+	}
+	c.cronManager[entryID] = struct{}{}
+
+	return nil
+}
+
+func (c *Connection) RemoveCronFunc(id cron.EntryID) {
+	c.cron.Remove(id)
 }
