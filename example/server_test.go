@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/ningzining/lazynet/bootstrap"
+	"github.com/ningzining/lazynet/conf"
 	"github.com/ningzining/lazynet/decoder"
 	"github.com/ningzining/lazynet/encoder"
 	"github.com/ningzining/lazynet/iface"
 )
 
 func TestStart1(t *testing.T) {
-	serverBootstrap := bootstrap.NewServer(bootstrap.WithServerPort(8999))
+	serverBootstrap := bootstrap.NewServer(conf.WithServerPort(8999))
 	serverBootstrap.SetConnOnActiveFunc(func(conn iface.Connection) {
 		log.Printf("remoteAddr: %s, connection on active", conn.RemoteAddr())
 	})
@@ -29,7 +30,7 @@ func TestStart1(t *testing.T) {
 }
 
 func TestStart2(t *testing.T) {
-	serverBootstrap := bootstrap.NewServer(bootstrap.WithServerPort(8999))
+	serverBootstrap := bootstrap.NewServer(conf.WithServerPort(8999))
 	serverBootstrap.SetConnOnActiveFunc(func(conn iface.Connection) {
 		log.Printf("remoteAddr: %s, connection on active", conn.RemoteAddr())
 	})

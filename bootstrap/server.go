@@ -14,7 +14,7 @@ import (
 )
 
 type Server struct {
-	config *conf.Config
+	config *conf.ServerConfig
 
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
@@ -30,20 +30,25 @@ type Server struct {
 }
 
 // NewServer 创建默认服务
-func NewServer(opts ...Option) iface.Server {
-	return newServerWithConfig(conf.DefaultConfig(), opts...)
+func NewServer(opts ...conf.ServerOption) iface.Server {
+	return NewServerWithConfig(conf.DefaultServerConfig(), opts...)
 }
 
 // NewServerWithConfig 自定义配置创建服务
-func NewServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
+func NewServerWithConfig(config *conf.ServerConfig, opts ...conf.ServerOption) iface.Server {
 	return newServerWithConfig(config, opts...)
 }
 
 // 使用配置创建服务
-func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
+func newServerWithConfig(config *conf.ServerConfig, opts ...conf.ServerOption) iface.Server {
+	for _, opt := range opts {
+		opt(config)
+	}
+
 	s := &Server{
 		config:           config,
 		decoder:          nil,
+		encoder:          nil,
 		handlers:         make([]iface.ChannelHandler, 0),
 		connOnActiveFunc: nil,
 		connOnCloseFunc:  nil,
@@ -51,11 +56,11 @@ func newServerWithConfig(config *conf.Config, opts ...Option) iface.Server {
 		dispatcher:       server.NewDispatcher(config.WorkerPoolSize, config.TaskQueueSize),
 	}
 
-	for _, opt := range opts {
-		opt(s)
-	}
-
 	return s
+}
+
+func (s *Server) GetConfig() *conf.ServerConfig {
+	return s.config
 }
 
 func (s *Server) Start() error {
@@ -108,10 +113,6 @@ func (s *Server) verify() error {
 	}
 
 	return nil
-}
-
-func (s *Server) GetConfig() *conf.Config {
-	return s.config
 }
 
 func (s *Server) SetDecoder(decoder decoder.Decoder) {

@@ -16,7 +16,7 @@ type Connection struct {
 	remoteAddr net.Addr
 	localAddr  net.Addr
 
-	client iface.Client
+	client iface.Client // 隶属于哪个client
 
 	decoder decoder.Decoder // 解码器
 	encoder encoder.Encoder // 编码器
@@ -41,7 +41,7 @@ func NewConnection(client iface.Client, conn net.Conn) iface.Connection {
 		decoder:    client.GetDecoder(),
 		encoder:    client.GetEncoder(),
 		pipeline:   nil,
-		readBuffer: bytes.NewBuffer(make([]byte, 0, 1024)),
+		readBuffer: bytes.NewBuffer(make([]byte, 0, client.GetConfig().MaxPackageSize*4)),
 		msgChan:    make(chan []byte),
 		exitChan:   make(chan struct{}),
 		onActive:   nil,
